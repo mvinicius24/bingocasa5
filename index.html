@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Bingo Realtime - Supabase</title>
+    <!-- Carrega a biblioteca oficial do Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0; padding: 0; background-color: #f0f4f8; color: #333;
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+        }
+        header {
+            background-color: #1e3a8a; color: white; width: 100%; text-align: center;
+            padding: 15px; font-size: 24px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .container {
+            width: 95%; max-width: 1000px; background: white; padding: 25px;
+            border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            margin: 20px 0; display: none;
+        }
+        .active { display: block; }
+        
+        /* TELA INICIAL (LOGIN/ENTRADA) */
+        .auth-box { max-width: 400px; margin: 50px auto; text-align: center; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 16px; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; background: #3b82f6; color: white; transition: background 0.2s; }
+        button:hover { background: #1d4ed8; }
+        .btn-alt { background: #64748b; margin-top: 10px; }
+        .btn-alt:hover { background: #475569; }
+
+        /* TELA DO CHAMADOR */
+        .chamador-layout { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 768px) { .chamador-layout { grid-template-columns: 320px 1fr; } }
+        .globo-section { display: flex; flex-direction: column; align-items: center; background: #f8fafc; padding: 20px; border-radius: 8px; border: 2px solid #e2e8f0; }
+        .globo-container {
+            width: 180px; height: 180px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #e2e8f0, #94a3b8);
+            border: 8px solid #475569; position: relative; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.15); margin-bottom: 20px;
+        }
+        .globo-inner { width: 120px; height: 120px; border-radius: 50%; border: 4px dashed #64748b; }
+        @keyframes girar { 0% {transform: rotate(0deg);} 100% {transform: rotate(360deg);} }
+        .girando { animation: girar 0.15s linear infinite; }
+        .pedra-display {
+            width: 100px; height: 100px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #ffffff, #f1f5f9);
+            border: 5px solid #1e3a8a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; position: absolute; transform: scale(0); transition: transform 0.3s ease;
+        }
+        .pedra-display.show { transform: scale(1); }
+        .pedra-numero { font-size: 38px; color: #1e3a8a; line-height: 1; }
+        .painel-conferencia { display: grid; grid-template-columns: repeat(15, 1fr); gap: 4px; background: #1e293b; padding: 12px; border-radius: 8px; }
+        .num-check { background: #334155; color: #64748b; text-align: center; padding: 6px 0; font-weight: bold; font-size: 12px; border-radius: 4px; }
+        .num-check.sorteado { background: #3b82f6; color: white; box-shadow: 0 0 8px #3b82f6; }
+        
+        /* FILA DE JOGADORES NO CHAMADOR */
+        .fila-jogadores { background: #f1f5f9; padding: 15px; border-radius: 8px; margin-top: 15px; width: 100%; }
+        .item-jogador { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: white; margin-bottom: 6px; border-radius: 4px; border-left: 4px solid #f59e0b; }
+        .item-jogador.aprovado { border-left-color: #10b981; }
+        .btn-mini { width: auto; padding: 6px 12px; font-size: 13px; background: #10b981; }
+
+        /* TELA DO JOGADOR */
+        .cartela { border: 4px solid #1e3a8a; border-radius: 12px; overflow: hidden; max-width: 420px; width: 100%; margin: 0 auto; }
+        .cartela-head { display: grid; grid-template-columns: repeat(5, 1fr); background: #1e3a8a; color: white; text-align: center; font-size: 26px; font-weight: 900; padding: 8px 0; }
+        .cartela-body { display: grid; grid-template-columns: repeat(5, 1fr); }
+        .celula { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; border: 1px solid #e2e8f0; cursor: pointer; user-select: none; background: #fff; }
+        .celula.marcado { background: #f59e0b; color: white; position: relative; }
+        .celula.marcado::after { content: ''; position: absolute; width: 75%; height: 75%; border: 2px solid white; border-radius: 50%; }
+        .celula.free-space { background: #e2e8f0; font-size: 11px; color: #64748b; cursor: default; text-transform: uppercase; }
+        .espera-box { text-align: center; padding: 40px 20px; color: #475569; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 15px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <header>🎰 Super Bingo Realtime</header>
+
+    <!-- 1. TELA DE SELEÇÃO INICIAL -->
+    <div id="tela-inicial" class="auth-box active">
+        <h3>Como deseja entrar?</h3>
+        <button onclick="mostrarLogin('jogador')">Sou Jogador</button>
+        <button onclick="mostrarLogin('chamador')" class="btn-alt">Sou Chamador (Painel)</button>
+    </div>
+
+    <!-- 2. LOGIN DO JOGADOR -->
+    <div id="login-jogador" class="auth-box">
+        <h3>Entrar como Jogador</h3>
+        <input type="text" id="nome-jogador" placeholder="Digite seu nome completo">
+        <button onclick="entrarComoJogador()">Pedir minha Cartela</button>
+        <button onclick="voltarInicio()" class="btn-alt">Voltar</button>
+    </div>
+
+    <!-- 3. LOGIN DO CHAMADOR -->
+    <div id="login-chamador" class="auth-box">
+        <h3>Acesso Restrito ao Chamador</h3>
+        <input type="password" id="senha-chamador" placeholder="Digite a senha da sala">
+        <button onclick="entrarComoChamador()">Acessar Painel</button>
+        <button onclick="voltarInicio()" class="btn-alt">Voltar</button>
+    </div>
+
+    <!-- 4. PAINEL DO JOGADOR (ESPERA OU JOGO) -->
+    <div id="tela-jogador" class="container">
+        <div id="jogador-espera" class="espera-box">
+            <h3 id="txt-status-espera">Olá, Cadastrado com sucesso!</h3>
+            <p>Aguarde enquanto o Chamador gera e valida a sua cartela...</p>
+            <div class="loader"></div>
+        </div>
+        <div id="jogador-jogo" style="display: none;">
+            <h3 style="text-align: center; margin-top: 0;" id="txt-nome-cartela">Sua Cartela</h3>
+            <div class="cartela">
+                <div class="cartela-head"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>
+                <div id="cartela-corpo" class="cartela-body"></div>
+            </div>
+            <button onclick="alert('🎉 BINGO! Avise o chamador no microfone agora mesmo!')" style="background:#ef4444; margin-top: 20px;">BINGO! 📢</button>
+        </div>
+    </div>
+
+    <!-- 5. PAINEL DO CHAMADOR (GLOBO + APROVAÇÃO) -->
+    <div id="tela-chamador" class="container">
+        <div class="chamador-layout">
+            <div class="globo-section">
+                <div id="globo" class="globo-container">
+                    <div class="globo-inner"></div>
+                    <div id="pedra-display" class="pedra-display">
+                        <span id="pedra-letra" style="font-size:14px; color:#ec4899;">BOLA</span>
+                        <span id="pedra-numero" class="pedra-numero">00</span>
+                    </div>
+                </div>
+                <button id="btn-sortear" onclick="sortearPedra()" style="background:#10b981;">SORTEAR PEDRA</button>
+                
+                <div class="fila-jogadores">
+                    <h4 style="margin: 0 0 10px 0; color:#1e3a8a;">Gerenciamento de Jogadores</h4>
+                    <div id="lista-jogadores-fila">
+                        <!-- Jogadores aparecem aqui em tempo real -->
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 style="margin-top: 0; color: #1e3a8a;">Painel de Conferência Geral</h3>
+                <div id="tabuleiro-conferencia" class="painel-conferencia"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. CONFIGURAÇÃO AUTOMÁTICA DO SUPABASE ---
+        const SUPABASE_URL = "https://afqrkodlfvqskbruwpwv.supabase.co"; 
+        const SUPABASE_KEY = "EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmcXJrb2RsZnZxc2ticnV3cHd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwMzcwNjksImV4cCI6MjA5NzYxMzA2OX0.blx_CFfTLvlqwQ_UFumutULBXczDneVJ7nSDh-nWlDk";
+        
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // --- VARIÁVEIS GLOBAIS ---
+        let meuIdJogador = null;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let pedrasDisponiveis = Array.from({length: 75}, (_, i) => i + 1);
+        let pedrasSorteadas = [];
+
+        // --- SISTEMA DE NAVEGAÇÃO DE TELAS ---
+        function alternarVisibilidade(idAtivo) {
+            document.querySelectorAll('.auth-box, .container').forEach(el => el.classList.remove('active'));
+            document.getElementById(idAtivo).classList.add('active');
+        }
+        function mostrarLogin(tipo) { alternarVisibilidade('login-' + tipo); }
+        function voltarInicio() { alternarVisibilidade('tela-inicial'); }
+
+        // --- SOM DO GLOBO (AUDIO MECÂNICO) ---
+        function somGiroGlobo(duracao) {
+            let endTime = audioCtx.currentTime + duracao;
+            let interval = setInterval(() => {
+                if(audioCtx.currentTime > endTime) { clearInterval(interval); return; }
+                let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(Math.random() * 140 + 70, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+            }, 55);
+        }
+
+        // --- LÓGICA DO JOGADOR ---
+        async function entrarComoJogador() {
+            const nome = document.getElementById('nome-jogador').value.trim();
+            if(!nome) return alert("Digite seu nome!");
+
+            document.getElementById('txt-status-espera').innerText = `Olá, ${nome}!`;
+            alternarVisibilidade('tela-jogador');
+
+            // Salva o jogador no banco de dados com status 'aguardando'
+            const { data, error } = await supabaseClient.from('jogadores').insert([{ nome: nome, status: 'aguardando' }]).select();
+            if(error) return alert("Erro ao conectar ao banco. Verifique as tabelas.");
+            
+            meuIdJogador = data[0].id;
+
+            // Fica escutando EM TEMPO REAL a alteração da sua própria linha
+            supabaseClient.channel(`canal-jogador-${meuIdJogador}`)
+                .on('postgres_changes', { event: 'UPDATE', table: 'jogadores', filter: `id=eq.${meuIdJogador}` }, payload => {
+                    if (payload.new.status === 'aprovado') {
+                        montarCartelaNaTela(payload.new.cartela);
+                    }
+                }).subscribe();
+        }
+
+        function montarCartelaNaTela(listaNumeros) {
+            document.getElementById('jogador-espera').style.display = 'none';
+            document.getElementById('jogador-jogo').style.display = 'block';
+            const corpo = document.getElementById('cartela-corpo');
+            corpo.innerHTML = '';
+
+            listaNumeros.forEach((num, index) => {
+                let div = document.createElement('div');
+                if(index === 12) { // Posição central é o espaço livre
+                    div.className = 'celula free-space'; div.innerText = 'Livre';
+                } else {
+                    div.className = 'celula'; div.innerText = num;
+                    div.onclick = function() { this.classList.toggle('marcado'); };
+                }
+                corpo.appendChild(div);
+            });
+        }
+
+        // --- LÓGICA DO CHAMADOR ---
+        async function entrarComoChamador() {
+            const senha = document.getElementById('senha-chamador').value;
+            const { data, error } = await supabaseClient.from('jogo_status').select('senha_chamador').eq('id', 1).single();
+            
+            if(data && data.senha_chamador === senha) {
+                alternarVisibilidade('tela-chamador');
+                inicializarTabuleiroConferencia();
+                puxarJogadoresExistentes();
+                escutarNovosJogadoresRealtime();
+            } else {
+                alert("Senha inválida!");
+            }
+        }
+
+        function inicializarTabuleiroConferencia() {
+            const tab = document.getElementById('tabuleiro-conferencia'); tab.innerHTML = '';
+            for(let i = 1; i <= 75; i++) {
+                let div = document.createElement('div'); div.className = 'num-check'; div.id = `chk-${i}`; div.innerText = i;
+                tab.appendChild(div);
+            }
+        }
+
+        async function puxarJogadoresExistentes() {
+            const { data } = await supabaseClient.from('jogadores').select('*').order('id', { ascending: true });
+            if(data) data.forEach(jog => atualizarFilaVisual(jog));
+        }
+
+        function escutarNovosJogadoresRealtime() {
+            supabaseClient.channel('fila-geral')
+                .on('postgres_changes', { event: 'INSERT', table: 'jogadores' }, payload => {
+                    atualizarFilaVisual(payload.new);
+                }).subscribe();
+        }
+
+        function atualizarFilaVisual(jogador) {
+            const fila = document.getElementById('lista-jogadores-fila');
+            if(document.getElementById(`fila-j-${jogador.id}`)) return;
+
+            let div = document.createElement('div');
+            div.id = `fila-j-${jogador.id}`;
+            div.className = `item-jogador ${jogador.status === 'aprovado' ? 'aprovado' : ''}`;
+            
+            let htmlInfo = `<span><strong>${jogador.nome}</strong> (${jogador.status})</span>`;
+            if(jogador.status === 'aguardando') {
+                htmlInfo += `<button class="btn-mini" id="btn-liberar-${jogador.id}" onclick="gerarEVincularCartela(${jogador.id})">Gerar Cartela</button>`;
+            }
+            div.innerHTML = htmlInfo;
+            fila.appendChild(div);
+        }
+
+        // Função executada pelo Chamador para criar a cartela de um jogador específico
+        async function gerarEVincularCartela(idJogador) {
+            document.getElementById(`btn-liberar-${idJogador}`).disabled = true;
+            
+            // Gerar Matriz de Bingo tradicional (5 colunas)
+            let b = gerarFaixa(1, 15); let i = gerarFaixa(16, 30);
+            let n = gerarFaixa(31, 45); let g = gerarFaixa(46, 60); let o = gerarFaixa(61, 75);
+            
+            let matrizCompleta = [];
+            for(let row=0; row<5; row++) {
+                matrizCompleta.push(b[row], i[row], n[row], g[row], o[row]);
+            }
+            // Posição 12 (meio) é nula/livre por padrão
+            matrizCompleta[12] = 0; 
+
+            // Envia os números e aprova o jogador no Supabase
+            await supabaseClient.from('jogadores').update({ status: 'aprovado', cartela: matrizCompleta }).eq('id', idJogador);
+            
+            let item = document.getElementById(`fila-j-${idJogador}`);
+            item.className = "item-jogador aprovado";
+            item.querySelector('span').innerHTML = `<strong>Aprovado</strong>`;
+            item.querySelector('button').remove();
+        }
+
+        function gerarFaixa(min, max) {
+            let res = [];
+            while(res.length < 5) {
+                let n = Math.floor(Math.random() * (max - min + 1)) + min;
+                if(!res.includes(n)) res.push(n);
+            }
+            return res.sort((a,b) => a - b);
+        }
+
+        function sortearPedra() {
+            if(pedrasDisponiveis.length === 0) return alert("Todas sorteadas!");
+            const btn = document.getElementById('btn-sortear');
+            btn.disabled = true;
+            document.getElementById('globo').classList.add('girando');
+            document.getElementById('pedra-display').classList.remove('show');
+
+            somGiroGlobo(2.0);
+
+            setTimeout(() => {
+                document.getElementById('globo').classList.remove('girando');
+                let idx = Math.floor(Math.random() * pedrasDisponiveis.length);
+                let pedra = pedrasDisponiveis.splice(idx, 1)[0];
+                pedrasSorteadas.push(pedra);
+
+                document.getElementById('pedra-numero').innerText = pedra;
+                document.getElementById('pedra-display').classList.add('show');
+                document.getElementById(`chk-${pedra}`).classList.add('sorteado');
+                btn.disabled = false;
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
