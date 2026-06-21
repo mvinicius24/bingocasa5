@@ -102,12 +102,10 @@
         .panel-chamador-wide { max-width: 750px; }
         .globo-box { text-align: center; background: #060913; border: 1px solid #1e293b; padding: 25px; border-radius: 8px; margin-bottom: 20px; position: relative; overflow: hidden; }
         
-        /* NOVO GLOBO VISUAL ANIMADO CSS/SVG */
         .globo-container { width: 100px; height: 100px; margin: 0 auto; position: relative; display: flex; align-items: center; justify-content: center; }
         .globo-mesh { width: 90px; height: 90px; border: 3px dashed var(--neon-blue); border-radius: 50%; position: absolute; box-shadow: 0 0 10px rgba(0, 242, 255, 0.2); transition: transform 0.1s linear; }
         .globo-mesh::before { content: ''; position: absolute; top: 15%; left: 15%; width: 70%; height: 70%; border: 2px dotted var(--neon-purple); border-radius: 50%; }
         
-        /* Bolinhas caóticas dentro do globo */
         .globo-particles { width: 100%; height: 100%; position: absolute; border-radius: 50%; animation: internalShake 0.15s infinite alternate linear; animation-play-state: paused; }
         .particle { width: 8px; height: 8px; background: #fff; border-radius: 50%; position: absolute; box-shadow: 0 0 4px #fff; }
         .p1 { top: 30px; left: 25px; background: var(--neon-blue); }
@@ -118,7 +116,6 @@
 
         .bola-display { width: 85px; height: 85px; border-radius: 50%; border: 2px solid var(--neon-blue); display: flex; align-items: center; justify-content: center; font-size: 34px; font-weight: bold; color: var(--neon-blue); margin: 15px auto; text-shadow: 0 0 10px var(--neon-blue); background: rgba(0,242,255,0.05); transition: all 0.3s; }
         
-        /* Classes ativadas via JS durante o giro */
         .globo-mesh.spinning { animation: spinGlobo 0.2s infinite linear; }
         .globo-particles.spinning { animation: internalShake 0.05s infinite alternate linear; }
         .bola-display.hidden-mode { transform: scale(0.7); opacity: 0.3; filter: blur(2px); }
@@ -176,6 +173,8 @@
             <div class="b-header">B</div><div class="b-header">I</div><div class="b-header">N</div><div class="b-header">G</div><div class="b-header">O</div>
         </div>
         <div class="bingo-grid" id="grid-cartela-corpo"></div>
+
+        <button class="btn-neon btn-red" onclick="desistirDoJogoJogador()" style="margin-top: 25px; padding: 10px; font-size: 13px;">🏳️ Desistir do Jogo</button>
     </div>
 
     <div class="neon-panel" id="view-chamador-lobby">
@@ -233,22 +232,19 @@
         let minhaCartelaNumeros = [];
         let bolasListadasAdmin = [];
         let loopAdminListas = null;
+        let loopJogadorBolas = null;
         let audioCtx = null;
         let girandoTrava = false;
 
-        // NOVO MOTOR DE ÁUDIO CINEMATOGRÁFICO DE ALTA FIDELIDADE
         function playSomGiroGlobo(duracaoMs) {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            
             const tempoAtual = audioCtx.currentTime;
 
-            // 1. O SOM DE VENTO DA ROTAÇÃO (Woosh-Woosh mecânico)
             let oscMotor = audioCtx.createOscillator();
             let gainMotor = audioCtx.createGain();
             oscMotor.type = 'sine';
-            oscMotor.frequency.setValueAtTime(65, tempoAtual); // Frequência super grave (motor)
+            oscMotor.frequency.setValueAtTime(65, tempoAtual);
             
-            // Cria a oscilação do vento conforme o globo dá voltas
             gainMotor.gain.setValueAtTime(0.04, tempoAtual);
             for(let t = 0; t < duracaoMs/1000; t += 0.3) {
                 gainMotor.gain.linearRampToValueAtTime(0.18, tempoAtual + t + 0.15);
@@ -259,7 +255,6 @@
             oscMotor.start();
             oscMotor.stop(tempoAtual + (duracaoMs / 1000));
 
-            // 2. RUÍDO DE FRICÇÃO DAS PEDRAS NAS PAREDES
             const bufferSize = audioCtx.sampleRate * (duracaoMs / 1000);
             const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
             const output = noiseBuffer.getChannelData(0);
@@ -270,7 +265,7 @@
 
             const filterFriction = audioCtx.createBiquadFilter();
             filterFriction.type = 'bandpass';
-            filterFriction.frequency.setValueAtTime(280, tempoAtual); // Tom oco acrílico
+            filterFriction.frequency.setValueAtTime(280, tempoAtual);
             filterFriction.Q.setValueAtTime(1.5, tempoAtual);
 
             const gainFriction = audioCtx.createGain();
@@ -282,31 +277,22 @@
             gainFriction.connect(audioCtx.destination);
             frictionNoise.start();
 
-            // 3. IMPACTOS INDIVIDUAIS RÁPIDOS (Chacoalhar de pedras)
             let tempoGiro = 0;
             let intervaloBatidas = setInterval(() => {
                 if (tempoGiro >= duracaoMs - 250) {
                     clearInterval(intervaloBatidas);
                     return;
                 }
-
                 let oscChoque = audioCtx.createOscillator();
                 let gainChoque = audioCtx.createGain();
-                
                 oscChoque.type = 'triangle';
-                // Frequências simulando impactos rígidos e secos
                 oscChoque.frequency.setValueAtTime(Math.random() * 90 + 90, audioCtx.currentTime); 
-                
                 gainChoque.gain.setValueAtTime(0.35, audioCtx.currentTime);
                 gainChoque.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
-                
                 oscChoque.connect(gainChoque);
                 gainChoque.connect(audioCtx.destination);
-                
                 oscChoque.start();
                 oscChoque.stop(audioCtx.currentTime + 0.04);
-
-                // Ritmo caótico natural
                 tempoGiro += Math.floor(Math.random() * 45) + 30; 
             }, 50);
         }
@@ -357,12 +343,23 @@
                 changeView('view-espera');
                 
                 let checkLoop = setInterval(async () => {
+                    // Se o chamador deletou a tabela no início da partida, a linha deste jogador some do banco
                     const r = await fetch(`${CONFIG.URL}/jogadores?id=eq.${meId}&select=liberado`, { headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
                     const d = await r.json();
+                    
+                    // Se a resposta retornar vazia, significa que a mesa foi resetada pelo Admin
+                    if(r.ok && d.length === 0) {
+                        clearInterval(checkLoop);
+                        meId = null;
+                        alert("A partida foi reiniciada pelo chamador.");
+                        changeView('view-inicial');
+                        return;
+                    }
+
                     if(r.ok && d.length > 0 && d[0].liberado) {
                         clearInterval(checkLoop);
                         montarGradeCartelaVisual(data[0].nome);
-                        setInterval(escutarBolasNoDispositivoJogador, 3000);
+                        loopJogadorBolas = setInterval(escutarBolasNoDispositivoJogador, 3000);
                     }
                 }, 3000);
             }
@@ -394,6 +391,7 @@
         }
 
         async function notificarMarcacaoAoBanco() {
+            if(!meId) return;
             const marcados = document.querySelectorAll('.b-cell.marked').length;
             await fetch(`${CONFIG.URL}/jogadores?id=eq.${meId}`, {
                 method: 'PATCH',
@@ -403,11 +401,40 @@
         }
 
         async function escutarBolasNoDispositivoJogador() {
+            if(!meId) return;
             const r = await fetch(`${CONFIG.URL}/jogo_status?id=eq.1&select=bola_atual`, { headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
             const d = await r.json();
+            
+            // Verifica simultaneamente se a partida foi limpa no meio do jogo
+            const checkMe = await fetch(`${CONFIG.URL}/jogadores?id=eq.${meId}&select=id`, { headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
+            const dataMe = await checkMe.json();
+            
+            if(checkMe.ok && dataMe.length === 0) {
+                if(loopJogadorBolas) clearInterval(loopJogadorBolas);
+                meId = null;
+                alert("Esta partida foi encerrada pelo chamador.");
+                changeView('view-inicial');
+                return;
+            }
+
             if(r.ok && d.length > 0 && d[0].bola_atual) {
                 document.getElementById('lbl-bola-atual-jog').innerText = `Última pedra chamada: 🔴 ${d[0].bola_atual}`;
             }
+        }
+
+        async function desistirDoJogoJogador() {
+            if(!confirm("Deseja mesmo desistir desta partida e abandonar sua cartela?")) return;
+            if(loopJogadorBolas) clearInterval(loopJogadorBolas);
+
+            await fetch(`${CONFIG.URL}/jogadores?id=eq.${meId}`, {
+                method: 'DELETE',
+                headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` }
+            });
+
+            meId = null;
+            minhaCartelaNumeros = [];
+            document.getElementById('inputNome').value = "";
+            changeView('view-inicial');
         }
 
         async function validarAcessoChamador() {
@@ -422,13 +449,16 @@
             }
         }
 
+        // CHAMADOR: APAGA TODAS AS CARTELAS E USUÁRIOS COMPATÍVEIS PARA EVITAR CONFLITOS
         async function configurarEIniciarNovaPartida() {
+            // 1. Reseta o status global do globo e das pedras sorteadas
             await fetch(`${CONFIG.URL}/jogo_status?id=eq.1`, {
                 method: 'PATCH',
                 headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ bola_atual: null, bolas_sorteadas: [] })
             });
 
+            // 2. Limpa toda a tabela de jogadores cadastrados e suas respectivas cartelas vinculadas
             await fetch(`${CONFIG.URL}/jogadores`, {
                 method: 'DELETE',
                 headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` }
@@ -450,7 +480,14 @@
         }
 
         async function encerrarPartidaGeral() {
-            if(!confirm("Tem certeza que deseja encerrar e resetar esta partida?")) return;
+            if(!confirm("Tem certeza que deseja encerrar e resetar esta partida? Isso expulsará todos os jogadores.")) return;
+            
+            // Deleta os jogadores ao encerrar também
+            await fetch(`${CONFIG.URL}/jogadores`, {
+                method: 'DELETE',
+                headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` }
+            });
+            
             ajustarEncerrarInterface();
         }
 
@@ -502,7 +539,6 @@
             renderizarListasNoAdmin();
         }
 
-        // CHAMADOR: RODA O GLOBO COM EFEITOS APRIMORADOS VISUAIS E DE ÁUDIO
         async function rodarGloboAdmin() {
             if(girandoTrava) return;
             if(bolasListadasAdmin.length >= 75) return alert("Fim das pedras!");
@@ -515,7 +551,6 @@
             
             btnGirar.disabled = true;
 
-            // Ativa os efeitos visuais de rotação 3D
             vMesh.classList.add('spinning');
             vPart.classList.add('spinning');
             bolaDisplay.classList.add('hidden-mode');
@@ -535,7 +570,6 @@
                     body: JSON.stringify({ bola_atual: bola, bolas_sorteadas: bolasListadasAdmin })
                 });
 
-                // Para as animações visuais antes de revelar o número
                 vMesh.classList.remove('spinning');
                 vPart.classList.remove('spinning');
                 bolaDisplay.classList.remove('hidden-mode');
@@ -544,7 +578,6 @@
                     bolaDisplay.innerText = bola;
                     sincronizarGrade75Admin();
                     
-                    // Som agudo cristalino da bola se fixando na rampa de saída
                     let oscConfirm = audioCtx.createOscillator();
                     let gainConfirm = audioCtx.createGain();
                     oscConfirm.type = 'sine';
@@ -560,7 +593,7 @@
                 girandoTrava = false;
                 btnGirar.disabled = false;
 
-            }, 2200); // 2.2 segundos de simulação física completa
+            }, 2200);
         }
 
         function sincronizarGrade75Admin() {
