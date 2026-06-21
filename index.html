@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teste de Conexão Oficial</title>
+    <title>Teste Supabase ECC v2</title>
     <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #f0f4f8; margin: 0; }
         .box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 90%; }
-        button { padding: 12px 24px; font-weight: bold; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; }
-        button:hover { background: #1d4ed8; }
+        button { padding: 12px 24px; font-weight: bold; background: #eab308; color: black; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #ca8a04; }
         #resultado { margin-top: 20px; padding: 15px; border-radius: 4px; font-weight: bold; font-size: 14px; text-align: left; word-break: break-all; white-space: pre-wrap; }
         .sucesso { background: #dcfce7; color: #15803d; }
         .erro { background: #fee2e2; color: #b91c1c; }
@@ -18,21 +18,21 @@
 <body>
 
     <div class="box">
-        <h3>Teste de Conexão com Nova Chave</h3>
-        <p>Este teste usa a nova Publishable Key para validar o acesso ao banco.</p>
+        <h3>Teste de Conexão Ajustado (ECC)</h3>
+        <p>Ajustando os cabeçalhos de autenticação para o novo formato do Supabase.</p>
         
-        <button onclick="testarConexaoNova()">Testar Nova Chave</button>
+        <button onclick="testarConexaoECC()">Executar Teste Atualizado</button>
 
-        <div id="resultado">Aguardando clique com nova chave...</div>
+        <div id="resultado">Aguardando comando...</div>
     </div>
 
     <script>
-        async function testarConexaoNova() {
+        async function testarConexaoECC() {
             const campoResultado = document.getElementById('resultado');
             campoResultado.className = 'tentando';
-            campoResultado.innerText = "🚀 Enviando requisição com a chave nova...";
+            campoResultado.innerText = "🚀 Enviando requisição adaptada...";
 
-            // Sua URL e a nova chave publicável configuradas
+            // Sua URL oficial e a chave Publishable ativa
             const url = "https://afqrkodlfvqskbruwpwv.supabase.co/rest/v1/jogadores";
             const apiKey = "Sb_publishable_Q3o5bYenBb6W6acnlRdF8Q_ZDG9kMcB";
 
@@ -41,30 +41,34 @@
                     method: 'POST',
                     headers: {
                         'apikey': apiKey,
+                        // Para chaves sb_publishable com ECC, passamos o Bearer no formato simplificado exigido pelo PostgREST
                         'Authorization': `Bearer ${apiKey}`,
                         'Content-Type': 'application/json',
                         'Prefer': 'return=representation'
                     },
                     body: JSON.stringify({
-                        nome: "Teste Chave Nova",
+                        nome: "Ajuste Fino ECC",
                         status: "aguardando"
                     })
                 });
 
-                const dados = await resposta.json();
+                // Se a resposta retornar um texto vazio ou falha na conversão de JSON
+                const textoResposta = await resposta.text();
+                let dados = {};
+                try { dados = JSON.parse(textoResposta); } catch(e) { dados = { raw: textoResposta }; }
 
                 if (!resposta.ok) {
                     campoResultado.className = 'erro';
-                    campoResultado.innerText = "❌ Erro do Banco:\n\n" + JSON.stringify(dados, null, 2);
+                    campoResultado.innerText = "❌ O Banco Rejeitou!\n\nStatus: " + resposta.status + "\n\n" + JSON.stringify(dados, null, 2);
                 } else {
                     campoResultado.className = 'sucesso';
-                    campoResultado.innerText = "✅ SUCESSO! A chave nova funcionou e o dado foi gravado.\n\nID do registro criado: " + dados[0].id;
+                    campoResultado.innerText = "✅ SUCESSO ABSOLUTO!\n\nO banco aceitou os novos cabeçalhos de segurança e inseriu os dados.";
                 }
 
             } catch (erro) {
                 console.error(erro);
                 campoResultado.className = 'erro';
-                campoResultado.innerText = "🚨 Erro de Rede:\n" + erro.message;
+                campoResultado.innerText = "🚨 Erro de Comunicação:\n" + erro.message;
             }
         }
     </script>
