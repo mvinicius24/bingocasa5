@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teste de Conexão Direta NATIVA</title>
+    <title>Teste de Conexão Oficial</title>
     <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #f0f4f8; margin: 0; }
         .box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 90%; }
@@ -18,22 +18,23 @@
 <body>
 
     <div class="box">
-        <h3>Teste de Conexão Direta Nativa</h3>
-        <p>Este teste usa a função nativa do navegador para forçar a resposta do banco.</p>
+        <h3>Teste de Conexão com Nova Chave</h3>
+        <p>Este teste usa a nova Publishable Key para validar o acesso ao banco.</p>
         
-        <button onclick="testarConexaoForte()">Forçar Envio ao Banco</button>
+        <button onclick="testarConexaoNova()">Testar Nova Chave</button>
 
-        <div id="resultado">Aguardando clique...</div>
+        <div id="resultado">Aguardando clique com nova chave...</div>
     </div>
 
     <script>
-        async function testarConexaoForte() {
+        async function testarConexaoNova() {
             const campoResultado = document.getElementById('resultado');
             campoResultado.className = 'tentando';
-            campoResultado.innerText = "🚀 Enviando requisição direta...";
+            campoResultado.innerText = "🚀 Enviando requisição com a chave nova...";
 
+            // Sua URL e a nova chave publicável configuradas
             const url = "https://afqrkodlfvqskbruwpwv.supabase.co/rest/v1/jogadores";
-            const apiKey = "EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmcXJrb2RsZnZxc2ticnV3cHd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwMzcwNjksImV4cCI6MjA5NzYxMzA2OX0.blx_CFfTLvlqwQ_UFumutULBXczDneVJ7nSDh-nWlDk";
+            const apiKey = "Sb_publishable_Q3o5bYenBb6W6acnlRdF8Q_ZDG9kMcB";
 
             try {
                 const resposta = await fetch(url, {
@@ -45,7 +46,7 @@
                         'Prefer': 'return=representation'
                     },
                     body: JSON.stringify({
-                        nome: "Teste Forçado Nativo",
+                        nome: "Teste Chave Nova",
                         status: "aguardando"
                     })
                 });
@@ -54,16 +55,16 @@
 
                 if (!resposta.ok) {
                     campoResultado.className = 'erro';
-                    campoResultado.innerText = "❌ O Banco Rejeitou!\n\n" + JSON.stringify(dados, null, 2);
+                    campoResultado.innerText = "❌ Erro do Banco:\n\n" + JSON.stringify(dados, null, 2);
                 } else {
                     campoResultado.className = 'sucesso';
-                    campoResultado.innerText = "✅ Perfeito! Conexão estabelecida.\n\nID Criado: " + dados[0].id;
+                    campoResultado.innerText = "✅ SUCESSO! A chave nova funcionou e o dado foi gravado.\n\nID do registro criado: " + dados[0].id;
                 }
 
             } catch (erro) {
                 console.error(erro);
                 campoResultado.className = 'erro';
-                campoResultado.innerText = "🚨 Erro de Rede/Bloqueio:\n O navegador impediu a saída dos dados. Erro: " + erro.message;
+                campoResultado.innerText = "🚨 Erro de Rede:\n" + erro.message;
             }
         }
     </script>
