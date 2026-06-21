@@ -3,109 +3,280 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bingo Light - Future Engine</title>
+    <title>Bingo Realtime | Modern UI</title>
     <style>
         :root {
-            --bg-color: #f8fafc;
-            --panel-bg: #ffffff;
-            --accent-blue: #2563eb;
-            --accent-green: #16a34a;
-            --accent-red: #dc2626;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --success: #059669;
+            --danger: #dc2626;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
             --border: #e2e8f0;
-            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
         }
 
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        
-        .neon-panel { width: 100%; max-width: 480px; background: var(--panel-bg); border: 1px solid var(--border); box-shadow: var(--shadow); border-radius: 16px; padding: 30px; display: none; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .neon-panel {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            display: none;
+            margin-bottom: 20px;
+        }
+
         .neon-panel.active { display: block; }
 
-        h1 { text-align: center; color: var(--accent-blue); }
-        input { width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; box-sizing: border-box; margin-bottom: 15px; }
-        button { width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: 600; text-transform: uppercase; cursor: pointer; margin-bottom: 10px; }
-        .btn-main { background: var(--accent-blue); color: #fff; }
-        .btn-red { background: var(--accent-red); color: #fff; }
-
-        /* Estilo do Cadeado */
-        .cadeado-area { border-top: 1px solid var(--border); margin-top: 30px; padding-top: 20px; text-align: center; }
-        .icon-lock { font-size: 24px; cursor: pointer; color: var(--text-muted); }
+        h1, h2, h3 { text-align: center; color: #0f172a; margin-top: 0; }
         
-        .bingo-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 20px; }
-        .b-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 8px; font-weight: bold; }
-        .b-cell.marked { background: var(--accent-green); color: white; }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .btn-main { background: var(--primary); color: white; }
+        .btn-green { background: var(--success); color: white; }
+        .btn-red { background: var(--danger); color: white; }
+
+        .bingo-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 15px; }
+        .b-header { text-align: center; font-weight: bold; color: var(--primary); }
+        .b-cell { background: var(--bg); border: 1px solid var(--border); text-align: center; padding: 12px 0; font-weight: 600; border-radius: 6px; cursor: pointer; }
+        .b-cell.marked { background: var(--success); color: white; border-color: var(--success); }
+        .b-cell.free { color: var(--secondary); font-size: 10px; background: var(--border); }
+
+        .painel-75 { display: grid; grid-template-columns: repeat(15, 1fr); gap: 4px; margin-top: 15px; background: var(--bg); padding: 8px; border-radius: 8px; }
+        .p-bola { background: var(--card); color: var(--secondary); text-align: center; padding: 6px 0; border-radius: 4px; font-size: 10px; font-weight: bold; border: 1px solid var(--border); }
+        .p-bola.active { background: var(--primary); color: white; }
+
+        .list-container { max-height: 200px; overflow-y: auto; margin-top: 10px; }
+        .player-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        
+        .bola-display { width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--primary); display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: bold; color: var(--primary); margin: 15px auto; background: #eff6ff; }
+        .winner-alert { background: #fee2e2; border: 1px solid var(--danger); color: var(--danger); padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 15px; display: none; }
     </style>
 </head>
 <body>
 
     <div class="neon-panel active" id="view-inicial">
-        <h1>BINGO FUTURE</h1>
-        <input type="text" id="inputNome" placeholder="Seu nome...">
-        <button class="btn-main" onclick="solicitarVagaJogador()">Entrar na Partida</button>
+        <h1>BINGO REALTIME</h1>
+        <input type="text" id="inputNome" placeholder="INSIRA SEU NOME...">
+        <button class="btn-main" onclick="solicitarVagaJogador()">Solicitar Cartela</button>
 
-        <div class="cadeado-area">
-            <span class="icon-lock" onclick="toggleCadeado()">🔒</span>
-            <div id="boxCadeado" style="display: none; margin-top: 15px;">
-                <input type="password" id="inputSenhaCadeado" placeholder="Senha do Administrador">
-                <button class="btn-main" onclick="validarAcessoChamador()">Acessar Painel</button>
+        <div style="margin-top: 20px; text-align: center; border-top: 1px solid var(--border); padding-top: 20px;">
+            <span onclick="abrirPromptCadeado()" style="cursor:pointer; color: var(--secondary);">⚙️ Admin</span>
+            <div id="boxCadeado" style="display: none; margin-top: 10px;">
+                <input type="password" id="inputSenhaCadeado" placeholder="SENHA...">
+                <button class="btn-main" onclick="validarAcessoChamador()">Acessar</button>
             </div>
         </div>
     </div>
 
+    <div class="neon-panel" id="view-espera">
+        <h2>AGUARDANDO</h2>
+        <p id="txt-nome-espera" style="text-align: center;"></p>
+    </div>
+
     <div class="neon-panel" id="view-cartela">
-        <h3 id="lbl-jogador-nome">Sua Cartela</h3>
-        <div id="lbl-bola-atual-jog" style="text-align: center; color: var(--accent-blue);">Aguardando...</div>
+        <h3 id="lbl-jogador-nome">Jogador</h3>
+        <div style="text-align: center; color: var(--primary); margin-bottom: 15px;" id="lbl-bola-atual-jog">--</div>
         <div class="bingo-grid" id="grid-cartela-corpo"></div>
-        <button class="btn-red" onclick="desistirDoJogoJogador()">Desistir</button>
+        <button class="btn-red" onclick="desistirDoJogoJogador()" style="margin-top: 20px;">Desistir</button>
+    </div>
+
+    <div class="neon-panel" id="view-chamador-lobby">
+        <h2>GERENCIADOR</h2>
+        <button class="btn-green" onclick="configurarEIniciarNovaPartida()">Iniciar Nova Partida</button>
     </div>
 
     <div class="neon-panel" id="view-chamador">
-        <h2>CONSOLE ADMIN</h2>
-        <button class="btn-red" onclick="encerrarPartidaGeral()">Encerrar Partida (Apagar Todos)</button>
+        <h2>CONSOLE EM JOGO</h2>
+        <div class="winner-alert" id="painel-alerta-vencedor">ALERTA: BINGO!</div>
+        <div class="bola-display" id="bola-principal">--</div>
+        <button class="btn-main" id="btn-girar-globo" onclick="rodarGloboAdmin()">Girar Globo</button>
+        <div id="lista-pedidos" class="list-container"></div>
+        <div id="lista-atendidos" class="list-container"></div>
+        <div class="painel-75" id="grade-75-bolas"></div>
+        <button class="btn-red" onclick="encerrarPartidaGeral()" style="margin-top: 20px;">Encerrar Jogo</button>
     </div>
 
     <script>
-        const CONFIG = { URL: "https://jolstaqfbllfbtfljpjj.supabase.co/rest/v1", KEY: "sb_publishable_G65OxEEE9Q_EidJkQqlWGg_Go07ePJg" };
-        let meId = null;
+        const CONFIG = {
+            URL: "https://jolstaqfbllfbtfljpjj.supabase.co/rest/v1",
+            KEY: "sb_publishable_G65OxEEE9Q_EidJkQqlWGg_Go07ePJg"
+        };
 
-        function changeView(id) {
+        let meId = null;
+        let minhaCartelaNumeros = [];
+        let bolasListadasAdmin = [];
+        let loopAdminListas = null;
+        let loopJogadorBolas = null;
+
+        function changeView(targetId) {
             document.querySelectorAll('.neon-panel').forEach(p => p.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+            document.getElementById(targetId).classList.add('active');
         }
 
-        function toggleCadeado() {
+        function abrirPromptCadeado() {
             const box = document.getElementById('boxCadeado');
             box.style.display = box.style.display === 'none' ? 'block' : 'none';
         }
 
-        async function validarAcessoChamador() {
-            const senha = document.getElementById('inputSenhaCadeado').value;
-            // Validação simples (substitua pela sua lógica de checagem)
-            if(senha === "1234") { 
-                changeView('view-chamador');
-            } else {
-                alert("Senha incorreta");
+        function initGrade75() {
+            const grade = document.getElementById('grade-75-bolas');
+            grade.innerHTML = '';
+            for(let i=1; i<=75; i++) {
+                let d = document.createElement('div');
+                d.className = 'p-bola'; d.id = `b75-${i}`; d.innerText = i;
+                grade.appendChild(d);
+            }
+        }
+        initGrade75();
+
+        async function solicitarVagaJogador() {
+            const nome = document.getElementById('inputNome').value.trim();
+            if(!nome) return alert('Por favor, digite seu nome.');
+
+            let c = [];
+            const gen = (mi, ma) => {
+                let s = []; while(s.length < 5) { let r = Math.floor(Math.random() * (ma - mi + 1)) + mi; if(!s.includes(r)) s.push(r); }
+                s.sort((a,b)=>a-b); c.push(...s);
+            };
+            gen(1,15); gen(16,30); gen(31,45); gen(46,60); gen(61,75);
+
+            const res = await fetch(`${CONFIG.URL}/jogadores`, {
+                method: 'POST',
+                headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+                body: JSON.stringify({ nome: nome, cartela: c, liberado: false, acertos: 0 })
+            });
+
+            const data = await res.json();
+            if(res.ok) {
+                meId = data[0].id;
+                minhaCartelaNumeros = c;
+                document.getElementById('txt-nome-espera').innerText = `Aguardando liberação, ${data[0].nome}...`;
+                changeView('view-espera');
+                
+                let loop = setInterval(async () => {
+                    const r = await fetch(`${CONFIG.URL}/jogadores?id=eq.${meId}&select=liberado`, { headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
+                    const d = await r.json();
+                    if(d.length > 0 && d[0].liberado) {
+                        clearInterval(loop);
+                        montarCartela(nome);
+                    }
+                }, 3000);
             }
         }
 
-        async function encerrarPartidaGeral() {
-            if(!confirm("Isso excluirá todos os jogadores da partida. Continuar?")) return;
-            
-            // Apaga todos os jogadores da base
-            await fetch(`${CONFIG.URL}/jogadores`, {
-                method: 'DELETE',
-                headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` }
+        function montarCartela(nome) {
+            document.getElementById('lbl-jogador-nome').innerText = nome.toUpperCase();
+            changeView('view-cartela');
+            const corpo = document.getElementById('grid-cartela-corpo');
+            corpo.innerHTML = '';
+            minhaCartelaNumeros.forEach((num, idx) => {
+                const cell = document.createElement('div');
+                cell.className = 'b-cell'; cell.innerText = num;
+                cell.onclick = () => { cell.classList.toggle('marked'); notificarMarcacao(); };
+                corpo.appendChild(cell);
             });
-            
-            alert("Partida encerrada e jogadores removidos.");
-            window.location.reload();
+            loopJogadorBolas = setInterval(escutarBolas, 3000);
         }
 
-        async function solicitarVagaJogador() {
-            // Lógica de entrada...
-            alert("Entrando na partida...");
-            changeView('view-cartela');
+        async function notificarMarcacao() {
+            const marcados = document.querySelectorAll('.b-cell.marked').length;
+            await fetch(`${CONFIG.URL}/jogadores?id=eq.${meId}`, {
+                method: 'PATCH',
+                headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ acertos: marcados })
+            });
+        }
+
+        async function escutarBolas() {
+            const r = await fetch(`${CONFIG.URL}/jogo_status?id=eq.1&select=bola_atual`, { headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
+            const d = await r.json();
+            if(r.ok && d.length > 0) document.getElementById('lbl-bola-atual-jog').innerText = `Última: ${d[0].bola_atual}`;
+        }
+
+        async function validarAcessoChamador() {
+            const senha = document.getElementById('inputSenhaCadeado').value;
+            const res = await fetch(`${CONFIG.URL}/jogo_status?id=eq.1&select=senha_chamador`, { headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
+            const data = await res.json();
+            if(res.ok && data[0].senha_chamador === senha) changeView('view-chamador-lobby');
+            else alert('Acesso negado.');
+        }
+
+        async function configurarEIniciarNovaPartida() {
+            await fetch(`${CONFIG.URL}/jogo_status?id=eq.1`, { method: 'PATCH', headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ bola_atual: null, bolas_sorteadas: [] }) });
+            await fetch(`${CONFIG.URL}/jogadores`, { method: 'DELETE', headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
+            bolasListadasAdmin = [];
+            changeView('view-chamador');
+            loopAdminListas = setInterval(renderizarListasNoAdmin, 4000);
+        }
+
+        async function renderizarListasNoAdmin() {
+            const res = await fetch(`${CONFIG.URL}/jogadores?select=id,nome,liberado,acertos&order=id.desc`, { headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
+            const players = await res.json();
+            const pPedidos = document.getElementById('lista-pedidos');
+            const pAtendidos = document.getElementById('lista-atendidos');
+            pPedidos.innerHTML = '<h6>Pedidos</h6>'; pAtendidos.innerHTML = '<h6>Jogadores</h6>';
+            
+            players.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'player-row';
+                div.innerHTML = `<span>${p.nome}</span> ${!p.liberado ? `<button onclick="liberar(${p.id})">Liberar</button>` : `<span>${p.acertos} pts</span>`}`;
+                p.liberado ? pAtendidos.appendChild(div) : pPedidos.appendChild(div);
+            });
+        }
+
+        async function liberar(id) {
+            await fetch(`${CONFIG.URL}/jogadores?id=eq.${id}`, { method: 'PATCH', headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ liberado: true }) });
+        }
+
+        async function rodarGloboAdmin() {
+            let bola = Math.floor(Math.random() * 75) + 1;
+            document.getElementById('bola-principal').innerText = bola;
+            await fetch(`${CONFIG.URL}/jogo_status?id=eq.1`, { method: 'PATCH', headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ bola_atual: bola }) });
+            document.getElementById(`b75-${bola}`).classList.add('active');
+        }
+
+        async function encerrarPartidaGeral() {
+            await fetch(`${CONFIG.URL}/jogadores`, { method: 'DELETE', headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
+            location.reload();
+        }
+
+        async function desistirDoJogoJogador() {
+            await fetch(`${CONFIG.URL}/jogadores?id=eq.${meId}`, { method: 'DELETE', headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
+            location.reload();
         }
     </script>
 </body>
