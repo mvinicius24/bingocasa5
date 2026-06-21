@@ -75,14 +75,16 @@
             cursor: pointer;
             transition: all 0.2s;
         }
+        button:disabled { opacity: 0.4; cursor: not-allowed; border-color: var(--text-muted) !important; color: var(--text-muted) !important; box-shadow: none !important; background: transparent !important;}
+        
         .btn-neon { background: transparent; border: 1px solid var(--neon-blue); color: var(--neon-blue); box-shadow: inset 0 0 5px var(--border-glow); }
-        .btn-neon:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 15px var(--neon-blue); }
+        .btn-neon:hover:not(:disabled) { background: var(--neon-blue); color: #000; box-shadow: 0 0 15px var(--neon-blue); }
         
         .btn-green { border-color: var(--neon-green); color: var(--neon-green); }
-        .btn-green:hover { background: var(--neon-green); color: #000; box-shadow: 0 0 15px var(--neon-green); }
+        .btn-green:hover:not(:disabled) { background: var(--neon-green); color: #000; box-shadow: 0 0 15px var(--neon-green); }
         
         .btn-red { border-color: var(--neon-red); color: var(--neon-red); }
-        .btn-red:hover { background: var(--neon-red); color: #000; box-shadow: 0 0 15px var(--neon-red); }
+        .btn-red:hover:not(:disabled) { background: var(--neon-red); color: #000; box-shadow: 0 0 15px var(--neon-red); }
 
         .cadeado-area { border-top: 1px dashed #1e293b; margin-top: 30px; padding-top: 20px; text-align: center; }
         .icon-lock { font-size: 24px; cursor: pointer; color: var(--text-muted); display: inline-block; transition: transform 0.3s; }
@@ -98,9 +100,35 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .panel-chamador-wide { max-width: 750px; }
-        .globo-box { text-align: center; background: #060913; border: 1px solid #1e293b; padding: 20px; border-radius: 8px; margin-bottom: 20px; position: relative; }
-        .bola-display { width: 85px; height: 85px; border-radius: 50%; border: 2px solid var(--neon-blue); display: flex; align-items: center; justify-content: center; font-size: 34px; font-weight: bold; color: var(--neon-blue); margin: 15px auto; text-shadow: 0 0 10px var(--neon-blue); background: rgba(0,242,255,0.05); }
+        .globo-box { text-align: center; background: #060913; border: 1px solid #1e293b; padding: 25px; border-radius: 8px; margin-bottom: 20px; position: relative; overflow: hidden; }
         
+        /* NOVO GLOBO VISUAL ANIMADO CSS/SVG */
+        .globo-container { width: 100px; height: 100px; margin: 0 auto; position: relative; display: flex; align-items: center; justify-content: center; }
+        .globo-mesh { width: 90px; height: 90px; border: 3px dashed var(--neon-blue); border-radius: 50%; position: absolute; box-shadow: 0 0 10px rgba(0, 242, 255, 0.2); transition: transform 0.1s linear; }
+        .globo-mesh::before { content: ''; position: absolute; top: 15%; left: 15%; width: 70%; height: 70%; border: 2px dotted var(--neon-purple); border-radius: 50%; }
+        
+        /* Bolinhas caóticas dentro do globo */
+        .globo-particles { width: 100%; height: 100%; position: absolute; border-radius: 50%; animation: internalShake 0.15s infinite alternate linear; animation-play-state: paused; }
+        .particle { width: 8px; height: 8px; background: #fff; border-radius: 50%; position: absolute; box-shadow: 0 0 4px #fff; }
+        .p1 { top: 30px; left: 25px; background: var(--neon-blue); }
+        .p2 { top: 55px; left: 40px; background: var(--neon-purple); }
+        .p3 { top: 40px; left: 60px; background: var(--neon-green); }
+        .p4 { top: 25px; left: 50px; }
+        .p5 { top: 60px; left: 20px; background: var(--neon-red); }
+
+        .bola-display { width: 85px; height: 85px; border-radius: 50%; border: 2px solid var(--neon-blue); display: flex; align-items: center; justify-content: center; font-size: 34px; font-weight: bold; color: var(--neon-blue); margin: 15px auto; text-shadow: 0 0 10px var(--neon-blue); background: rgba(0,242,255,0.05); transition: all 0.3s; }
+        
+        /* Classes ativadas via JS durante o giro */
+        .globo-mesh.spinning { animation: spinGlobo 0.2s infinite linear; }
+        .globo-particles.spinning { animation: internalShake 0.05s infinite alternate linear; }
+        .bola-display.hidden-mode { transform: scale(0.7); opacity: 0.3; filter: blur(2px); }
+
+        @keyframes spinGlobo { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes internalShake { from { transform: translate(2px, -2px) rotate(0deg); } to { transform: translate(-2px, 3px) rotate(10deg); } }
+
+        .winner-alert { background: rgba(255, 0, 85, 0.15); border: 1px solid var(--neon-red); color: var(--neon-red); padding: 10px; border-radius: 6px; text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 15px; display: none; animation: pulseRed 1s infinite alternate; text-shadow: 0 0 5px var(--neon-red); }
+        @keyframes pulseRed { from { box-shadow: 0 0 4px var(--neon-red); } to { box-shadow: 0 0 14px var(--neon-red); } }
+
         .painel-75 { display: grid; grid-template-columns: repeat(15, 1fr); gap: 4px; margin-top: 15px; background: #060913; padding: 8px; border-radius: 6px; border: 1px solid #1e293b; }
         .p-bola { background: #121829; color: var(--text-muted); font-size: 11px; text-align: center; padding: 6px 0; border-radius: 2px; font-weight: bold; }
         .p-bola.active { background: var(--neon-blue); color: #000; box-shadow: 0 0 6px var(--neon-blue); }
@@ -108,8 +136,8 @@
         .list-container { max-height: 180px; overflow-y: auto; margin-top: 10px; }
         .player-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #060913; border: 1px solid #1e293b; margin-bottom: 4px; border-radius: 4px; font-size: 14px; }
         .score-badge { background: var(--neon-purple); color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; }
+        .score-badge.winner-badge { background: var(--neon-red); box-shadow: 0 0 8px var(--neon-red); animation: pulseRed 0.5s infinite alternate; }
         
-        /* TELA DE ESPERA DE PARTIDA (CHAMADOR) */
         .lobby-box { text-align: center; padding: 40px 20px; }
     </style>
 </head>
@@ -163,11 +191,21 @@
             <h2 class="glow-purple" style="margin: 0;">🎛️ CONSOLE EM JOGO</h2>
             <button class="btn-neon btn-red" onclick="encerrarPartidaGeral()" style="width: auto; padding: 6px 15px; font-size: 12px;">Encerrar Jogo</button>
         </div>
+
+        <div class="winner-alert" id="painel-alerta-vencedor">🚨 ALERTA: ALGUÉM COMPLETOU A CARTELA!</div>
         
         <div class="globo-box">
-            <span style="font-size: 12px; text-transform: uppercase; color: var(--text-muted);">Globo Sincronizado</span>
+            <div class="globo-container">
+                <div class="globo-mesh" id="mesh-visual"></div>
+                <div class="globo-particles" id="particles-visual">
+                    <div class="particle p1"></div><div class="particle p2"></div>
+                    <div class="particle p3"></div><div class="particle p4"></div>
+                    <div class="particle p5"></div>
+                </div>
+            </div>
+
             <div class="bola-display" id="bola-principal">--</div>
-            <button class="btn-neon" onclick="rodarGloboAdmin()" style="max-width: 220px; margin: 0 auto;">Girar Globo</button>
+            <button class="btn-neon" id="btn-girar-globo" onclick="rodarGloboAdmin()" style="max-width: 220px; margin: 10px auto 0 auto;">Girar Globo</button>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -196,58 +234,81 @@
         let bolasListadasAdmin = [];
         let loopAdminListas = null;
         let audioCtx = null;
+        let girandoTrava = false;
 
+        // NOVO MOTOR DE ÁUDIO CINEMATOGRÁFICO DE ALTA FIDELIDADE
         function playSomGiroGlobo(duracaoMs) {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             
+            const tempoAtual = audioCtx.currentTime;
+
+            // 1. O SOM DE VENTO DA ROTAÇÃO (Woosh-Woosh mecânico)
+            let oscMotor = audioCtx.createOscillator();
+            let gainMotor = audioCtx.createGain();
+            oscMotor.type = 'sine';
+            oscMotor.frequency.setValueAtTime(65, tempoAtual); // Frequência super grave (motor)
+            
+            // Cria a oscilação do vento conforme o globo dá voltas
+            gainMotor.gain.setValueAtTime(0.04, tempoAtual);
+            for(let t = 0; t < duracaoMs/1000; t += 0.3) {
+                gainMotor.gain.linearRampToValueAtTime(0.18, tempoAtual + t + 0.15);
+                gainMotor.gain.linearRampToValueAtTime(0.04, tempoAtual + t + 0.3);
+            }
+            oscMotor.connect(gainMotor);
+            gainMotor.connect(audioCtx.destination);
+            oscMotor.start();
+            oscMotor.stop(tempoAtual + (duracaoMs / 1000));
+
+            // 2. RUÍDO DE FRICÇÃO DAS PEDRAS NAS PAREDES
             const bufferSize = audioCtx.sampleRate * (duracaoMs / 1000);
             const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
             const output = noiseBuffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                output[i] = Math.random() * 2 - 1;
-            }
+            for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
 
-            const whiteNoise = audioCtx.createBufferSource();
-            whiteNoise.buffer = noiseBuffer;
+            const frictionNoise = audioCtx.createBufferSource();
+            frictionNoise.buffer = noiseBuffer;
 
-            const filter = audioCtx.createBiquadFilter();
-            filter.type = 'bandpass';
-            filter.frequency.setValueAtTime(400, audioCtx.currentTime); 
-            filter.Q.setValueAtTime(2, audioCtx.currentTime);
+            const filterFriction = audioCtx.createBiquadFilter();
+            filterFriction.type = 'bandpass';
+            filterFriction.frequency.setValueAtTime(280, tempoAtual); // Tom oco acrílico
+            filterFriction.Q.setValueAtTime(1.5, tempoAtual);
 
-            const gainNode = audioCtx.createGain();
-            gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            const gainFriction = audioCtx.createGain();
+            gainFriction.gain.setValueAtTime(0.03, tempoAtual);
+            gainFriction.gain.exponentialRampToValueAtTime(0.005, tempoAtual + (duracaoMs/1000));
 
-            whiteNoise.connect(filter);
-            filter.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+            frictionNoise.connect(filterFriction);
+            filterFriction.connect(gainFriction);
+            gainFriction.connect(audioCtx.destination);
+            frictionNoise.start();
 
-            whiteNoise.start();
-
+            // 3. IMPACTOS INDIVIDUAIS RÁPIDOS (Chacoalhar de pedras)
             let tempoGiro = 0;
             let intervaloBatidas = setInterval(() => {
-                if (tempoGiro >= duracaoMs - 200) {
+                if (tempoGiro >= duracaoMs - 250) {
                     clearInterval(intervaloBatidas);
                     return;
                 }
 
-                let osc = audioCtx.createOscillator();
-                let batidaGain = audioCtx.createGain();
+                let oscChoque = audioCtx.createOscillator();
+                let gainChoque = audioCtx.createGain();
                 
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(Math.random() * 100 + 120, audioCtx.currentTime); 
+                oscChoque.type = 'triangle';
+                // Frequências simulando impactos rígidos e secos
+                oscChoque.frequency.setValueAtTime(Math.random() * 90 + 90, audioCtx.currentTime); 
                 
-                batidaGain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                batidaGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                gainChoque.gain.setValueAtTime(0.35, audioCtx.currentTime);
+                gainChoque.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
                 
-                osc.connect(batidaGain);
-                batidaGain.connect(audioCtx.destination);
+                oscChoque.connect(gainChoque);
+                gainChoque.connect(audioCtx.destination);
                 
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.05);
+                oscChoque.start();
+                oscChoque.stop(audioCtx.currentTime + 0.04);
 
-                tempoGiro += Math.floor(Math.random() * 60) + 40; 
-            }, 60);
+                // Ritmo caótico natural
+                tempoGiro += Math.floor(Math.random() * 45) + 30; 
+            }, 50);
         }
 
         function changeView(targetId) {
@@ -271,7 +332,6 @@
         }
         initGrade75();
 
-        // JOGADOR SOLICITA ENTRADA
         async function solicitarVagaJogador() {
             const nome = document.getElementById('inputNome').value.trim();
             if(!nome) return alert('Por favor, digite seu nome.');
@@ -350,30 +410,25 @@
             }
         }
 
-        // CHAMADOR: ENTRAR PELO CADEADO
         async function validarAcessoChamador() {
             const senha = document.getElementById('inputSenhaCadeado').value;
             const res = await fetch(`${CONFIG.URL}/jogo_status?id=eq.1&select=senha_chamador`, { headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
             const data = await res.json();
 
             if(res.ok && data.length > 0 && data[0].senha_chamador === senha) {
-                // Em vez de ir direto pro jogo, vai pro Lobby criar/limpar a partida
                 changeView('view-chamador-lobby');
             } else {
                 alert('Acesso negado.');
             }
         }
 
-        // NOVO FLUXO: ADICIONA RESET COMPLETO NO BANCO AO INICIAR A PARTIDA
         async function configurarEIniciarNovaPartida() {
-            // 1. Limpa todas as bolas sorteadas do painel principal (ID 1)
             await fetch(`${CONFIG.URL}/jogo_status?id=eq.1`, {
                 method: 'PATCH',
                 headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ bola_atual: null, bolas_sorteadas: [] })
             });
 
-            // 2. Apaga todos os jogadores antigos da tabela pra recomeçar do zero
             await fetch(`${CONFIG.URL}/jogadores`, {
                 method: 'DELETE',
                 headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` }
@@ -381,15 +436,14 @@
 
             bolasListadasAdmin = [];
             document.getElementById('bola-principal').innerText = "--";
+            document.getElementById('painel-alerta-vencedor').style.display = 'none';
             sincronizarGrade75Admin();
 
-            // Abre a tela de jogo oficial
             changeView('view-chamador');
             renderizarListasNoAdmin();
             loopAdminListas = setInterval(renderizarListasNoAdmin, 4000);
         }
 
-        // ENCERRA A PARTIDA E RETORNA AO LOBBY DE CRIAÇÃO
         function ajustarEncerrarInterface() {
             clearInterval(loopAdminListas);
             changeView('view-chamador-lobby');
@@ -409,6 +463,9 @@
             const pAtendidos = document.getElementById('lista-atendidos');
             pPedidos.innerHTML = ''; pAtendidos.innerHTML = '';
 
+            let alguemGanhou = false;
+            let nomeVencedor = "";
+
             players.forEach(p => {
                 const row = document.createElement('div');
                 row.className = 'player-row';
@@ -416,10 +473,24 @@
                     row.innerHTML = `<span>👤 ${p.nome}</span> <button class="btn-neon btn-green" onclick="liberarCartelaAdmin(${p.id})" style="width:auto; padding:5px 10px; font-size:11px;">Liberar</button>`;
                     pPedidos.appendChild(row);
                 } else {
-                    row.innerHTML = `<span>👤 ${p.nome}</span> <span class="score-badge">${p.acertos} pts</span>`;
+                    if(p.acertos >= 24) {
+                        alguemGanhou = true;
+                        nomeVencedor = p.nome.toUpperCase();
+                        row.innerHTML = `<span>🏆 <b>${p.nome}</b></span> <span class="score-badge winner-badge">BINGO!</span>`;
+                    } else {
+                        row.innerHTML = `<span>👤 ${p.nome}</span> <span class="score-badge">${p.acertos} pts</span>`;
+                    }
                     pAtendidos.appendChild(row);
                 }
             });
+
+            const banner = document.getElementById('painel-alerta-vencedor');
+            if(alguemGanhou) {
+                banner.innerText = `🚨 BINGO! O JOGADOR [ ${nomeVencedor} ] USOU TODAS AS PEDRAS!`;
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+            }
         }
 
         async function liberarCartelaAdmin(id) {
@@ -431,11 +502,26 @@
             renderizarListasNoAdmin();
         }
 
+        // CHAMADOR: RODA O GLOBO COM EFEITOS APRIMORADOS VISUAIS E DE ÁUDIO
         async function rodarGloboAdmin() {
+            if(girandoTrava) return;
             if(bolasListadasAdmin.length >= 75) return alert("Fim das pedras!");
 
-            playSomGiroGlobo(2000);
-            document.getElementById('bola-principal').innerText = "♻️";
+            girandoTrava = true;
+            const btnGirar = document.getElementById('btn-girar-globo');
+            const bolaDisplay = document.getElementById('bola-principal');
+            const vMesh = document.getElementById('mesh-visual');
+            const vPart = document.getElementById('particles-visual');
+            
+            btnGirar.disabled = true;
+
+            // Ativa os efeitos visuais de rotação 3D
+            vMesh.classList.add('spinning');
+            vPart.classList.add('spinning');
+            bolaDisplay.classList.add('hidden-mode');
+            bolaDisplay.innerText = "♻️";
+
+            playSomGiroGlobo(2200);
 
             setTimeout(async () => {
                 let bola;
@@ -449,22 +535,32 @@
                     body: JSON.stringify({ bola_atual: bola, bolas_sorteadas: bolasListadasAdmin })
                 });
 
+                // Para as animações visuais antes de revelar o número
+                vMesh.classList.remove('spinning');
+                vPart.classList.remove('spinning');
+                bolaDisplay.classList.remove('hidden-mode');
+
                 if(res.ok) {
-                    document.getElementById('bola-principal').innerText = bola;
+                    bolaDisplay.innerText = bola;
                     sincronizarGrade75Admin();
                     
+                    // Som agudo cristalino da bola se fixando na rampa de saída
                     let oscConfirm = audioCtx.createOscillator();
                     let gainConfirm = audioCtx.createGain();
                     oscConfirm.type = 'sine';
-                    oscConfirm.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
-                    gainConfirm.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                    gainConfirm.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                    oscConfirm.frequency.setValueAtTime(620, audioCtx.currentTime); 
+                    gainConfirm.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                    gainConfirm.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
                     oscConfirm.connect(gainConfirm);
                     gainConfirm.connect(audioCtx.destination);
                     oscConfirm.start();
-                    oscConfirm.stop(audioCtx.currentTime + 0.15);
+                    oscConfirm.stop(audioCtx.currentTime + 0.2);
                 }
-            }, 2000);
+
+                girandoTrava = false;
+                btnGirar.disabled = false;
+
+            }, 2200); // 2.2 segundos de simulação física completa
         }
 
         function sincronizarGrade75Admin() {
