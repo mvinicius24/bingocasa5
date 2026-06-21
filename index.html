@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Bingo Realtime - Supabase</title>
-    <!-- Carrega a biblioteca oficial do Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
@@ -31,15 +30,6 @@
         button:hover { background: #1d4ed8; }
         .btn-alt { background: #64748b; margin-top: 10px; }
         .btn-alt:hover { background: #475569; }
-
-        /* ÍCONE DE CADEADO DO CHAMADOR */
-        .cadeado-chamador {
-            position: absolute; top: 15px; right: 15px; width: 36px; height: 36px;
-            background: #f1f5f9; border-radius: 50%; display: flex; align-items: center;
-            justify-content: center; cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;
-        }
-        .cadeado-chamador:hover { background: #e2e8f0; transform: scale(1.05); }
-        .cadeado-chamador svg { width: 18px; height: 18px; fill: #64748b; }
 
         /* TELA DO CHAMADOR */
         .chamador-layout { display: grid; grid-template-columns: 1fr; gap: 20px; }
@@ -85,21 +75,18 @@
 
     <header>🎰 Super Bingo Realtime</header>
 
-    <!-- 1. TELA DE ENTRADA DO JOGADOR (TELA INICIAL LIMPA) -->
     <div id="tela-inicial" class="auth-box active">
-        <!-- Botão secreto de Cadeado no canto superior direito para o Chamador -->
-        <div class="cadeado-chamador" title="Área do Chamador" onclick="mostrarLogin('chamador')">
-            <svg viewBox="0 0 24 24">
+        <button class="cadeado-chamador" title="Área do Chamador" onclick="mostrarLogin('chamador')" style="all: unset; position: absolute; top: 15px; right: 15px; width: 36px; height: 36px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid #e2e8f0;">
+            <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: #64748b;">
                 <path d="M12,17A2,2 0 0,0 14,15C14,13.89 13.1,13 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10C4,8.89 4.9,8 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z" />
             </svg>
-        </div>
+        </button>
 
         <h3>Entrar no Bingo</h3>
         <input type="text" id="nome-jogador" placeholder="Digite seu nome para jogar">
         <button onclick="entrarComoJogador()">Pedir minha Cartela</button>
     </div>
 
-    <!-- 2. LOGIN DO CHAMADOR (RESTRITO) -->
     <div id="login-chamador" class="auth-box">
         <h3>Painel de Controle</h3>
         <p style="font-size: 13px; color: #64748b; margin-top: -10px;">Acesso restrito ao organizador</p>
@@ -108,7 +95,6 @@
         <button onclick="voltarInicio()" class="btn-alt">Voltar</button>
     </div>
 
-    <!-- 3. PAINEL DO JOGADOR (ESPERA OU JOGO) -->
     <div id="tela-jogador" class="container">
         <div id="jogador-espera" class="espera-box">
             <h3 id="txt-status-espera">Olá!</h3>
@@ -125,7 +111,6 @@
         </div>
     </div>
 
-    <!-- 4. PAINEL DO CHAMADOR (GLOBO + APROVAÇÃO) -->
     <div id="tela-chamador" class="container">
         <div class="chamador-layout">
             <div class="globo-section">
@@ -141,8 +126,7 @@
                 <div class="fila-jogadores">
                     <h4 style="margin: 0 0 10px 0; color:#1e3a8a;">Gerenciamento de Jogadores</h4>
                     <div id="lista-jogadores-fila">
-                        <!-- Jogadores aparecem aqui em tempo real -->
-                    </div>
+                        </div>
                 </div>
             </div>
 
@@ -154,7 +138,24 @@
     </div>
 
     <script>
-        // --- 1. CONFIGURAÇÃO AUTOMÁTICA DO SUPABASE ---
+        // --- FUNÇÕES DE NAVEGAÇÃO NO TOPO (EVITA TRAVAMENTO SE O BANCO FALHAR) ---
+        function alternarVisibilidade(idAtivo) {
+            document.querySelectorAll('.auth-box, .container').forEach(el => el.classList.remove('active'));
+            const painel = document.getElementById(idAtivo);
+            if (painel) {
+                painel.classList.add('active');
+            } else {
+                alert("Erro interno: Tela não encontrada (" + idAtivo + ")");
+            }
+        }
+        function mostrarLogin(tipo) { 
+            alternarVisibilidade('login-' + tipo); 
+        }
+        function voltarInicio() { 
+            alternarVisibilidade('tela-inicial'); 
+        }
+
+        // --- CONFIGURAÇÃO DO SUPABASE ---
         const SUPABASE_URL = "https://afqrkodlfvqskbruwpwv.supabase.co"; 
         const SUPABASE_KEY = "EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmcXJrb2RsZnZxc2ticnV3cHd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwMzcwNjksImV4cCI6MjA5NzYxMzA2OX0.blx_CFfTLvlqwQ_UFumutULBXczDneVJ7nSDh-nWlDk";
         
@@ -165,14 +166,6 @@
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let pedrasDisponiveis = Array.from({length: 75}, (_, i) => i + 1);
         let pedrasSorteadas = [];
-
-        // --- SISTEMA DE NAVEGAÇÃO DE TELAS ---
-        function alternarVisibilidade(idAtivo) {
-            document.querySelectorAll('.auth-box, .container').forEach(el => el.classList.remove('active'));
-            document.getElementById(idAtivo).classList.add('active');
-        }
-        function mostrarLogin(tipo) { alternarVisibilidade('login-' + tipo); }
-        function voltarInicio() { alternarVisibilidade('tela-inicial'); }
 
         // --- SOM DO GLOBO (AUDIO MECÂNICO) ---
         function somGiroGlobo(duracao) {
