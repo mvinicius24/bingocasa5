@@ -233,7 +233,7 @@
         let bolasListadasAdmin = [];
         let loopAdminListas = null;
         let loopJogadorBolas = null;
-        let loopEsperaLiberacao = null; // Guardar o intervalo da tela de espera
+        let loopEsperaLiberacao = null;
         let audioCtx = null;
         let girandoTrava = false;
 
@@ -348,7 +348,6 @@
                     const r = await fetch(`${CONFIG.URL}/jogadores?id=eq.${meId}&select=liberado`, { headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
                     const d = await r.json();
                     
-                    // Tratamento caso o admin delete as tabelas antes da liberação
                     if(r.ok && d.length === 0) {
                         clearInterval(loopEsperaLiberacao);
                         meId = null;
@@ -401,17 +400,17 @@
             });
         }
 
-        // REDIRECIONAMENTO IMEDIATO: Monitora se o chamador deletou a mesa
+        // VERIFICAÇÃO ATIVA (HEARTBEAT): Valida a existência a cada 3s, prevenindo bugs
         async function escutarBolasNoDispositivoJogador() {
             if(!meId) return;
 
-            // Faz a leitura rápida do jogador atual
+            // 1. Verifica se o jogador ainda existe no banco ativo do Supabase
             const checkMe = await fetch(`${CONFIG.URL}/jogadores?id=eq.${meId}&select=id`, { headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
             const dataMe = await checkMe.json();
             
-            // Se o ID não existe mais, limpa o loop imediatamente e joga para a Home
+            // Se o retorno for vazio, o jogo foi limpo ou encerrado pelo admin
             if(checkMe.ok && dataMe.length === 0) {
-                clearInterval(loopJogadorBolas);
+                clearInterval(loopJogadorBolas); // Para o loop imediatamente
                 meId = null;
                 minhaCartelaNumeros = [];
                 alert("Esta partida foi encerrada pelo chamador.");
@@ -419,7 +418,7 @@
                 return;
             }
 
-            // Se o jogador continua ativo, lê as pedras sorteadas normalmente
+            // 2. Se o jogo está ativo, atualiza a última pedra chamada na interface
             const r = await fetch(`${CONFIG.URL}/jogo_status?id=eq.1&select=bola_atual`, { headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
             const d = await r.json();
             if(r.ok && d.length > 0 && d[0].bola_atual) {
@@ -427,16 +426,15 @@
             }
         }
 
-        // CORREÇÃO DO BUG: Desativa o cronômetro ANTES do alerta e do fetch
         async function desistirDoJogoJogador() {
             if(!confirm("Deseja mesmo desistir desta partida e abandonar sua cartela?")) return;
             
-            // Trava o loop imediatamente na máquina local para evitar alertas múltiplos concorrentes
+            // Para todos os loops imediatamente ANTES do fetch para evitar concorrência de alertas
             if(loopJogadorBolas) clearInterval(loopJogadorBolas);
             if(loopEsperaLiberacao) clearInterval(loopEsperaLiberacao);
 
             const tempId = meId;
-            meId = null; // Anula a credencial local
+            meId = null; // Desvincula credencial imediatamente da memória local
 
             await fetch(`${CONFIG.URL}/jogadores?id=eq.${tempId}`, {
                 method: 'DELETE',
