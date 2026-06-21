@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super Bingo - Passo 1</title>
+    <title>Super Bingo - Passo 2</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
@@ -66,8 +66,8 @@
     </div>
 
     <div id="tela-painel-chamador" class="auth-box oculto" style="max-width: 600px;">
-        <h3 style="color: #10b981;">🎉 Sucesso! Você entrou no Painel</h3>
-        <p>Esta é a área que o chamador verá após a senha ser validada.</p>
+        <h3 style="color: #10b981;">🎉 Sucesso! Conectado ao Banco</h3>
+        <p>A senha foi lida e validada com sucesso de dentro do seu banco de dados Supabase.</p>
         <button onclick="voltarParaJogador()" class="btn-alt">Sair do Painel</button>
     </div>
 
@@ -87,25 +87,45 @@
         function entrarComoJogador() {
             const nome = document.getElementById('nome-jogador').value.trim();
             if(!nome) return alert("Por favor, digite seu nome!");
-            alert("Nome recebido: " + nome + "\n(A conexão com o banco faremos no próximo passo!)");
+            alert("Nome recebido localmente: " + nome + "\n(Validando a conexão do Chamador primeiro...)");
         }
 
-        // --- PREPARAÇÃO DO SUPABASE (PROVISÓRIO) ---
-        // Quando você me enviar as chaves, vamos substituir esses valores de teste pelos reais
-        const SUPABASE_URL = "https://exemplo.supabase.co"; 
-        const SUPABASE_KEY = "chave_provisoria_para_nao_travar";
+        // --- CONFIGURAÇÃO OFICIAL DO SUPABASE ---
+        const SUPABASE_URL = "https://afqrkodlfvqskbruwpwv.supabase.co"; 
+        const SUPABASE_KEY = "EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmcXJrb2RsZnZxc2ticnV3cHd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwMzcwNjksImV4cCI6MjA5NzYxMzA2OX0.blx_CFfTLvlqwQ_UFumutULBXczDneVJ7nSDh-nWlDk";
+        
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Função de validação local temporária (Trocaremos pela consulta ao banco depois)
-        function validarSenhaChamador() {
+        // --- VALIDAÇÃO REAL VIA BANCO DE DADOS ---
+        async function validarSenhaChamador() {
             const senhaDigitada = document.getElementById('senha-chamador').value;
             
-            // Senha temporária só para testar a transição de telas localmente
-            if(senhaDigitada === "1234") {
+            // Faz a leitura exata na tabela jogo_status
+            const { data, error } = await supabaseClient
+                .from('jogo_status')
+                .select('senha_chamador')
+                .eq('id', 1)
+                .maybeSingle();
+
+            // Se der erro de credenciais ou chaves
+            if (error) {
+                console.error(error);
+                alert("Erro de autenticação no Supabase:\n" + error.message + "\nCódigo: " + error.code);
+                return;
+            }
+
+            // Se a tabela estiver vazia
+            if (!data) {
+                alert("Conexão OK, mas a tabela 'jogo_status' não tem nenhuma linha criada com ID 1.");
+                return;
+            }
+
+            // Valida a senha trazida do banco
+            if (data.senha_chamador === senhaDigitada) {
                 document.getElementById('tela-senha-chamador').classList.add('oculto');
                 document.getElementById('tela-painel-chamador').classList.remove('oculto');
             } else {
-                alert("Senha inválida de teste! Use a senha: 1234");
+                alert("Senha incorreta!");
             }
         }
     </script>
