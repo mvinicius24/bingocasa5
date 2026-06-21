@@ -3,87 +3,476 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teste de Conexão Novo Projeto</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Bingo Realtime Future</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #f0f4f8; margin: 0; }
-        .box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; max-width: 450px; width: 90%; }
-        .btn-group { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
-        button { padding: 12px 20px; font-weight: bold; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
-        .btn-gravar { background: #22c55e; }
-        .btn-gravar:hover { background: #16a34a; }
-        .btn-ler { background: #3b82f6; }
-        .btn-ler:hover { background: #1d4ed8; }
-        #resultado { margin-top: 20px; padding: 15px; border-radius: 4px; font-weight: bold; font-size: 14px; text-align: left; word-break: break-all; white-space: pre-wrap; }
-        .sucesso { background: #dcfce7; color: #15803d; }
-        .erro { background: #fee2e2; color: #b91c1c; }
-        .info { background: #e0f2fe; color: #0369a1; }
+        :root {
+            --neon-blue: #00f2ff;
+            --neon-purple: #9d4edd;
+            --neon-green: #39ff14;
+            --neon-red: #ff0055;
+            --bg-dark: #0a0f1d;
+            --card-dark: #121829;
+            --text-main: #e2e8f0;
+            --text-muted: #64748b;
+            --border-glow: rgba(0, 242, 255, 0.2);
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .neon-panel {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-dark);
+            border: 1px solid var(--neon-blue);
+            box-shadow: 0 0 15px var(--border-glow);
+            border-radius: 12px;
+            padding: 25px;
+            box-sizing: border-box;
+            display: none;
+        }
+
+        .neon-panel.active { display: block; animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        h1, h2, h3 { text-align: center; margin-top: 0; letter-spacing: 1px; font-weight: 300; }
+        .glow-text { color: var(--neon-blue); text-shadow: 0 0 8px rgba(0, 242, 255, 0.6); font-weight: 700; }
+        .glow-purple { color: var(--neon-purple); text-shadow: 0 0 8px rgba(157, 78, 221, 0.6); }
+
+        .input-group { margin-bottom: 20px; position: relative; }
+        input {
+            width: 100%;
+            padding: 14px;
+            background: #060913;
+            border: 1px solid #1e293b;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: all 0.3s;
+        }
+        input:focus { outline: none; border-color: var(--neon-blue); box-shadow: 0 0 8px rgba(0, 242, 255, 0.3); }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-neon { background: transparent; border: 1px solid var(--neon-blue); color: var(--neon-blue); box-shadow: inset 0 0 5px var(--border-glow); }
+        .btn-neon:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 15px var(--neon-blue); }
+        
+        .btn-green { border-color: var(--neon-green); color: var(--neon-green); }
+        .btn-green:hover { background: var(--neon-green); color: #000; box-shadow: 0 0 15px var(--neon-green); }
+        
+        .btn-red { border-color: var(--neon-red); color: var(--neon-red); }
+        .btn-red:hover { background: var(--neon-red); color: #000; box-shadow: 0 0 15px var(--neon-red); }
+
+        .cadeado-area { border-top: 1px dashed #1e293b; margin-top: 30px; padding-top: 20px; text-align: center; }
+        .icon-lock { font-size: 24px; cursor: pointer; color: var(--text-muted); display: inline-block; transition: transform 0.3s; }
+        .icon-lock:hover { transform: scale(1.1); color: var(--neon-purple); }
+
+        .bingo-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 15px; }
+        .b-header { text-align: center; font-weight: bold; color: var(--neon-blue); font-size: 18px; padding-bottom: 5px; }
+        .b-cell { background: #060913; border: 1px solid #1e293b; text-align: center; padding: 14px 0; font-weight: bold; font-size: 16px; border-radius: 4px; cursor: pointer; }
+        .b-cell.marked { border-color: var(--neon-green); color: var(--neon-green); text-shadow: 0 0 5px rgba(57, 255, 20, 0.5); }
+        .b-cell.free { color: var(--text-muted); font-size: 11px; }
+
+        .loader-glow { width: 40px; height: 40px; border: 2px solid transparent; border-top-color: var(--neon-blue); border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .panel-chamador-wide { max-width: 750px; }
+        .globo-box { text-align: center; background: #060913; border: 1px solid #1e293b; padding: 20px; border-radius: 8px; margin-bottom: 20px; position: relative; }
+        .bola-display { width: 85px; height: 85px; border-radius: 50%; border: 2px solid var(--neon-blue); display: flex; align-items: center; justify-content: center; font-size: 34px; font-weight: bold; color: var(--neon-blue); margin: 15px auto; text-shadow: 0 0 10px var(--neon-blue); background: rgba(0,242,255,0.05); }
+        
+        .painel-75 { display: grid; grid-template-columns: repeat(15, 1fr); gap: 4px; margin-top: 15px; background: #060913; padding: 8px; border-radius: 6px; border: 1px solid #1e293b; }
+        .p-bola { background: #121829; color: var(--text-muted); font-size: 11px; text-align: center; padding: 6px 0; border-radius: 2px; font-weight: bold; }
+        .p-bola.active { background: var(--neon-blue); color: #000; box-shadow: 0 0 6px var(--neon-blue); }
+
+        .list-container { max-height: 180px; overflow-y: auto; margin-top: 10px; }
+        .player-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #060913; border: 1px solid #1e293b; margin-bottom: 4px; border-radius: 4px; font-size: 14px; }
+        .score-badge { background: var(--neon-purple); color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; }
+        
+        /* TELA DE ESPERA DE PARTIDA (CHAMADOR) */
+        .lobby-box { text-align: center; padding: 40px 20px; }
     </style>
 </head>
 <body>
 
-    <div class="box">
-        <h3>Novo Projeto: Teste de Conexão</h3>
-        <p>Use os botões abaixo para validar se a escrita e a leitura estão liberadas no novo banco.</p>
+    <div class="neon-panel active" id="view-inicial">
+        <h1 class="glow-text">BINGO REALTIME</h1>
+        <p style="text-align: center; color: var(--text-muted); font-size: 14px; margin-bottom: 30px;">FUTURE ENGINE</p>
         
-        <div class="btn-group">
-            <button class="btn-gravar" onclick="testarEscrita()">1. Testar Escrita</button>
-            <button class="btn-ler" onclick="testarLeitura()">2. Testar Leitura</button>
+        <div class="input-group">
+            <input type="text" id="inputNome" placeholder="INSIRA SEU NOME...">
+        </div>
+        <button class="btn-neon" onclick="solicitarVagaJogador()">Solicitar Cartela</button>
+
+        <div class="cadeado-area">
+            <span class="icon-lock" onclick="abrirPromptCadeado()">🔒</span>
+            <div id="boxCadeado" style="display: none; margin-top: 10px;">
+                <input type="password" id="inputSenhaCadeado" placeholder="SENHA DO CADEADO..." style="max-width: 200px; padding: 8px; font-size: 14px;">
+                <button class="btn-neon" onclick="validarAcessoChamador()" style="max-width: 100px; padding: 8px; font-size: 12px; margin-left: 5px;">Acessar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="neon-panel" id="view-espera">
+        <h2 class="glow-purple">AGUARDANDO LIBERAÇÃO</h2>
+        <div class="loader-glow"></div>
+        <p style="text-align: center; color: var(--text-muted);" id="txt-nome-espera"></p>
+        <p style="text-align: center; font-size: 14px;">Sua transmissão de dados está conectada. Aguardando autorização do Painel do Chamador...</p>
+    </div>
+
+    <div class="neon-panel" id="view-cartela">
+        <h3 id="lbl-jogador-nome" style="margin-bottom: 5px;">Jogador</h3>
+        <div style="text-align: center; font-size: 14px; color: var(--neon-blue); margin-bottom: 15px;" id="lbl-bola-atual-jog">Última pedra chamada: --</div>
+        
+        <div class="bingo-grid">
+            <div class="b-header">B</div><div class="b-header">I</div><div class="b-header">N</div><div class="b-header">G</div><div class="b-header">O</div>
+        </div>
+        <div class="bingo-grid" id="grid-cartela-corpo"></div>
+    </div>
+
+    <div class="neon-panel" id="view-chamador-lobby">
+        <h2 class="glow-purple">GERENCIADOR DE PARTIDAS</h2>
+        <div class="lobby-box">
+            <p style="color: var(--text-muted); margin-bottom: 25px;">Pronto para iniciar um novo sorteio? Ao criar a partida, o painel de pedras e os jogadores antigos serão limpos.</p>
+            <button class="btn-neon btn-green" onclick="configurarEIniciarNovaPartida()">✨ Iniciar Nova Partida</button>
+        </div>
+    </div>
+
+    <div class="neon-panel panel-chamador-wide" id="view-chamador">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 class="glow-purple" style="margin: 0;">🎛️ CONSOLE EM JOGO</h2>
+            <button class="btn-neon btn-red" onclick="encerrarPartidaGeral()" style="width: auto; padding: 6px 15px; font-size: 12px;">Encerrar Jogo</button>
+        </div>
+        
+        <div class="globo-box">
+            <span style="font-size: 12px; text-transform: uppercase; color: var(--text-muted);">Globo Sincronizado</span>
+            <div class="bola-display" id="bola-principal">--</div>
+            <button class="btn-neon" onclick="rodarGloboAdmin()" style="max-width: 220px; margin: 0 auto;">Girar Globo</button>
         </div>
 
-        <div id="resultado" class="info">Aguardando comandos...</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+                <span style="font-size: 13px; font-weight: bold; color: var(--neon-blue);">📥 PEDIDOS DE CARTELA</span>
+                <div class="list-container" id="lista-pedidos"></div>
+            </div>
+            <div>
+                <span style="font-size: 13px; font-weight: bold; color: var(--neon-green);">👥 JOGADORES EM JOGO</span>
+                <div class="list-container" id="lista-atendidos"></div>
+            </div>
+        </div>
+
+        <span style="font-size: 13px; font-weight: bold; display: block; margin-top: 25px; color: var(--text-muted);">📊 PAINEL DE PEDRAS (1 A 75)</span>
+        <div class="painel-75" id="grade-75-bolas"></div>
     </div>
 
     <script>
-        // --- CREDENCIAIS DO NOVO PROJETO ---
-        const NEW_SUPABASE_URL = "https://jolstaqfbllfbtfljpjj.supabase.co"; 
-        const NEW_SUPABASE_KEY = "Sb_publishable_G65OxEEE9Q_EidJkQqlWGg_Go07ePJg"; 
-        
-        // Inicializa o cliente do Supabase
-        const supabaseClient = supabase.createClient(NEW_SUPABASE_URL, NEW_SUPABASE_KEY);
+        const CONFIG = {
+            URL: "https://jolstaqfbllfbtfljpjj.supabase.co/rest/v1",
+            KEY: "sb_publishable_G65OxEEE9Q_EidJkQqlWGg_Go07ePJg"
+        };
 
-        // FUNÇÃO 1: GRAVAR NO BANCO
-        async function testarEscrita() {
-            const painel = document.getElementById('resultado');
-            painel.className = 'info';
-            painel.innerText = "Gravando dado de teste...";
+        let meId = null;
+        let minhaCartelaNumeros = [];
+        let bolasListadasAdmin = [];
+        let loopAdminListas = null;
+        let audioCtx = null;
 
-            const { data, error } = await supabaseClient
-                .from('teste_conexao')
-                .insert([{ mensagem: "Conexão estabelecida com sucesso!" }])
-                .select();
+        function playSomGiroGlobo(duracaoMs) {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            const bufferSize = audioCtx.sampleRate * (duracaoMs / 1000);
+            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
 
-            if (error) {
-                painel.className = 'erro';
-                painel.innerText = "❌ Erro ao Gravar:\n\n" + JSON.stringify(error, null, 2);
-            } else {
-                painel.className = 'sucesso';
-                painel.innerText = "✅ Gravado com Sucesso!\n\nID do registro criado: " + data[0].id + "\nHorário: " + data[0].criado_em;
+            const whiteNoise = audioCtx.createBufferSource();
+            whiteNoise.buffer = noiseBuffer;
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(400, audioCtx.currentTime); 
+            filter.Q.setValueAtTime(2, audioCtx.currentTime);
+
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+
+            whiteNoise.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            whiteNoise.start();
+
+            let tempoGiro = 0;
+            let intervaloBatidas = setInterval(() => {
+                if (tempoGiro >= duracaoMs - 200) {
+                    clearInterval(intervaloBatidas);
+                    return;
+                }
+
+                let osc = audioCtx.createOscillator();
+                let batidaGain = audioCtx.createGain();
+                
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(Math.random() * 100 + 120, audioCtx.currentTime); 
+                
+                batidaGain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                batidaGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                
+                osc.connect(batidaGain);
+                batidaGain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.05);
+
+                tempoGiro += Math.floor(Math.random() * 60) + 40; 
+            }, 60);
+        }
+
+        function changeView(targetId) {
+            document.querySelectorAll('.neon-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(targetId).classList.add('active');
+        }
+
+        function abrirPromptCadeado() {
+            const box = document.getElementById('boxCadeado');
+            box.style.display = box.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function initGrade75() {
+            const grade = document.getElementById('grade-75-bolas');
+            grade.innerHTML = '';
+            for(let i=1; i<=75; i++) {
+                let d = document.createElement('div');
+                d.className = 'p-bola'; d.id = `b75-${i}`; d.innerText = i;
+                grade.appendChild(d);
+            }
+        }
+        initGrade75();
+
+        // JOGADOR SOLICITA ENTRADA
+        async function solicitarVagaJogador() {
+            const nome = document.getElementById('inputNome').value.trim();
+            if(!nome) return alert('Por favor, digite seu nome.');
+
+            let c = [];
+            const gen = (mi, ma) => {
+                let s = []; while(s.length < 5) { let r = Math.floor(Math.random() * (ma - mi + 1)) + mi; if(!s.includes(r)) s.push(r); }
+                s.sort((a,b)=>a-b); c.push(...s);
+            };
+            gen(1,15); gen(16,30); gen(31,45); gen(46,60); gen(61,75);
+
+            const res = await fetch(`${CONFIG.URL}/jogadores`, {
+                method: 'POST',
+                headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+                body: JSON.stringify({ nome: nome, cartela: c, liberado: false, acertos: 0 })
+            });
+
+            const data = await res.json();
+            if(res.ok) {
+                meId = data[0].id;
+                minhaCartelaNumeros = c;
+                document.getElementById('txt-nome-espera').innerText = data[0].nome;
+                changeView('view-espera');
+                
+                let checkLoop = setInterval(async () => {
+                    const r = await fetch(`${CONFIG.URL}/jogadores?id=eq.${meId}&select=liberado`, { headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
+                    const d = await r.json();
+                    if(r.ok && d.length > 0 && d[0].liberado) {
+                        clearInterval(checkLoop);
+                        montarGradeCartelaVisual(data[0].nome);
+                        setInterval(escutarBolasNoDispositivoJogador, 3000);
+                    }
+                }, 3000);
             }
         }
 
-        // FUNÇÃO 2: LER DO BANCO
-        async function testarLeitura() {
-            const painel = document.getElementById('resultado');
-            painel.className = 'info';
-            painel.innerText = "Buscando dados no banco...";
+        function montarGradeCartelaVisual(nome) {
+            document.getElementById('lbl-jogador-nome').innerText = `CONEXÃO: ${nome.toUpperCase()}`;
+            changeView('view-cartela');
 
-            const { data, error } = await supabaseClient
-                .from('teste_conexao')
-                .select('*')
-                .order('id', { ascending: false });
+            const corpo = document.getElementById('grid-cartela-corpo');
+            corpo.innerHTML = '';
 
-            if (error) {
-                painel.className = 'erro';
-                painel.innerText = "❌ Erro ao Ler:\n\n" + JSON.stringify(error, null, 2);
-            } else {
-                if(data.length === 0) {
-                    painel.className = 'erro';
-                    painel.innerText = "⚠️ O banco respondeu corretamente, mas está vazio. Clique em 'Testar Escrita' primeiro!";
-                } else {
-                    painel.className = 'sucesso';
-                    painel.innerText = `✅ Leitura Ok! Encontrados ${data.length} registros.\n\nÚltimo dado no banco:\nID: ${data[0].id}\nMensagem: "${data[0].mensagem}"`;
+            for(let i=0; i<5; i++) {
+                for(let j=0; j<5; j++) {
+                    const idx = j * 5 + i;
+                    const cell = document.createElement('div');
+                    if(idx === 12) {
+                        cell.className = 'b-cell free'; cell.innerText = 'LIVRE';
+                    } else {
+                        cell.className = 'b-cell'; cell.innerText = minhaCartelaNumeros[idx];
+                        cell.onclick = () => {
+                            cell.classList.toggle('marked');
+                            notificarMarcacaoAoBanco();
+                        };
+                    }
+                    corpo.appendChild(cell);
                 }
+            }
+        }
+
+        async function notificarMarcacaoAoBanco() {
+            const marcados = document.querySelectorAll('.b-cell.marked').length;
+            await fetch(`${CONFIG.URL}/jogadores?id=eq.${meId}`, {
+                method: 'PATCH',
+                headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ acertos: marcados })
+            });
+        }
+
+        async function escutarBolasNoDispositivoJogador() {
+            const r = await fetch(`${CONFIG.URL}/jogo_status?id=eq.1&select=bola_atual`, { headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
+            const d = await r.json();
+            if(r.ok && d.length > 0 && d[0].bola_atual) {
+                document.getElementById('lbl-bola-atual-jog').innerText = `Última pedra chamada: 🔴 ${d[0].bola_atual}`;
+            }
+        }
+
+        // CHAMADOR: ENTRAR PELO CADEADO
+        async function validarAcessoChamador() {
+            const senha = document.getElementById('inputSenhaCadeado').value;
+            const res = await fetch(`${CONFIG.URL}/jogo_status?id=eq.1&select=senha_chamador`, { headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
+            const data = await res.json();
+
+            if(res.ok && data.length > 0 && data[0].senha_chamador === senha) {
+                // Em vez de ir direto pro jogo, vai pro Lobby criar/limpar a partida
+                changeView('view-chamador-lobby');
+            } else {
+                alert('Acesso negado.');
+            }
+        }
+
+        // NOVO FLUXO: ADICIONA RESET COMPLETO NO BANCO AO INICIAR A PARTIDA
+        async function configurarEIniciarNovaPartida() {
+            // 1. Limpa todas as bolas sorteadas do painel principal (ID 1)
+            await fetch(`${CONFIG.URL}/jogo_status?id=eq.1`, {
+                method: 'PATCH',
+                headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bola_atual: null, bolas_sorteadas: [] })
+            });
+
+            // 2. Apaga todos os jogadores antigos da tabela pra recomeçar do zero
+            await fetch(`${CONFIG.URL}/jogadores`, {
+                method: 'DELETE',
+                headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` }
+            });
+
+            bolasListadasAdmin = [];
+            document.getElementById('bola-principal').innerText = "--";
+            sincronizarGrade75Admin();
+
+            // Abre a tela de jogo oficial
+            changeView('view-chamador');
+            renderizarListasNoAdmin();
+            loopAdminListas = setInterval(renderizarListasNoAdmin, 4000);
+        }
+
+        // ENCERRA A PARTIDA E RETORNA AO LOBBY DE CRIAÇÃO
+        function ajustarEncerrarInterface() {
+            clearInterval(loopAdminListas);
+            changeView('view-chamador-lobby');
+        }
+
+        async function encerrarPartidaGeral() {
+            if(!confirm("Tem certeza que deseja encerrar e resetar esta partida?")) return;
+            ajustarEncerrarInterface();
+        }
+
+        async function renderizarListasNoAdmin() {
+            const res = await fetch(`${CONFIG.URL}/jogadores?select=id,nome,liberado,acertos&order=id.desc`, { headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
+            const players = await res.json();
+            if(!res.ok) return;
+
+            const pPedidos = document.getElementById('lista-pedidos');
+            const pAtendidos = document.getElementById('lista-atendidos');
+            pPedidos.innerHTML = ''; pAtendidos.innerHTML = '';
+
+            players.forEach(p => {
+                const row = document.createElement('div');
+                row.className = 'player-row';
+                if(!p.liberado) {
+                    row.innerHTML = `<span>👤 ${p.nome}</span> <button class="btn-neon btn-green" onclick="liberarCartelaAdmin(${p.id})" style="width:auto; padding:5px 10px; font-size:11px;">Liberar</button>`;
+                    pPedidos.appendChild(row);
+                } else {
+                    row.innerHTML = `<span>👤 ${p.nome}</span> <span class="score-badge">${p.acertos} pts</span>`;
+                    pAtendidos.appendChild(row);
+                }
+            });
+        }
+
+        async function liberarCartelaAdmin(id) {
+            await fetch(`${CONFIG.URL}/jogadores?id=eq.${id}`, {
+                method: 'PATCH',
+                headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ liberado: true })
+            });
+            renderizarListasNoAdmin();
+        }
+
+        async function rodarGloboAdmin() {
+            if(bolasListadasAdmin.length >= 75) return alert("Fim das pedras!");
+
+            playSomGiroGlobo(2000);
+            document.getElementById('bola-principal').innerText = "♻️";
+
+            setTimeout(async () => {
+                let bola;
+                do { bola = Math.floor(Math.random() * 75) + 1; } while(bolasListadasAdmin.includes(bola));
+                
+                bolasListadasAdmin.push(bola);
+
+                const res = await fetch(`${CONFIG.URL}/jogo_status?id=eq.1`, {
+                    method: 'PATCH',
+                    headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bola_atual: bola, bolas_sorteadas: bolasListadasAdmin })
+                });
+
+                if(res.ok) {
+                    document.getElementById('bola-principal').innerText = bola;
+                    sincronizarGrade75Admin();
+                    
+                    let oscConfirm = audioCtx.createOscillator();
+                    let gainConfirm = audioCtx.createGain();
+                    oscConfirm.type = 'sine';
+                    oscConfirm.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
+                    gainConfirm.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gainConfirm.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                    oscConfirm.connect(gainConfirm);
+                    gainConfirm.connect(audioCtx.destination);
+                    oscConfirm.start();
+                    oscConfirm.stop(audioCtx.currentTime + 0.15);
+                }
+            }, 2000);
+        }
+
+        function sincronizarGrade75Admin() {
+            for(let i=1; i<=75; i++) {
+                document.getElementById(`b75-${i}`).classList.toggle('active', bolasListadasAdmin.includes(i));
+            }
+            if(bolasListadasAdmin.length > 0) {
+                document.getElementById('bola-principal').innerText = bolasListadasAdmin[bolasListadasAdmin.length - 1];
             }
         }
     </script>
