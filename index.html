@@ -3,72 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teste Supabase ECC v2</title>
+    <title>Teste de Conexão Novo Projeto</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #f0f4f8; margin: 0; }
-        .box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 90%; }
-        button { padding: 12px 24px; font-weight: bold; background: #eab308; color: black; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; }
-        button:hover { background: #ca8a04; }
+        .box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; max-width: 450px; width: 90%; }
+        .btn-group { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
+        button { padding: 12px 20px; font-weight: bold; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .btn-gravar { background: #22c55e; }
+        .btn-gravar:hover { background: #16a34a; }
+        .btn-ler { background: #3b82f6; }
+        .btn-ler:hover { background: #1d4ed8; }
         #resultado { margin-top: 20px; padding: 15px; border-radius: 4px; font-weight: bold; font-size: 14px; text-align: left; word-break: break-all; white-space: pre-wrap; }
         .sucesso { background: #dcfce7; color: #15803d; }
         .erro { background: #fee2e2; color: #b91c1c; }
-        .tentando { background: #fef08a; color: #854d0e; }
+        .info { background: #e0f2fe; color: #0369a1; }
     </style>
 </head>
 <body>
 
     <div class="box">
-        <h3>Teste de Conexão Ajustado (ECC)</h3>
-        <p>Ajustando os cabeçalhos de autenticação para o novo formato do Supabase.</p>
+        <h3>Novo Projeto: Teste de Conexão</h3>
+        <p>Use os botões abaixo para validar se a escrita e a leitura estão liberadas no novo banco.</p>
         
-        <button onclick="testarConexaoECC()">Executar Teste Atualizado</button>
+        <div class="btn-group">
+            <button class="btn-gravar" onclick="testarEscrita()">1. Testar Escrita</button>
+            <button class="btn-ler" onclick="testarLeitura()">2. Testar Leitura</button>
+        </div>
 
-        <div id="resultado">Aguardando comando...</div>
+        <div id="resultado" class="info">Aguardando comandos...</div>
     </div>
 
     <script>
-        async function testarConexaoECC() {
-            const campoResultado = document.getElementById('resultado');
-            campoResultado.className = 'tentando';
-            campoResultado.innerText = "🚀 Enviando requisição adaptada...";
+        // --- CREDENCIAIS DO NOVO PROJETO ---
+        const NEW_SUPABASE_URL = "https://jolstaqfbllfbtfljpjj.supabase.co"; 
+        const NEW_SUPABASE_KEY = "Sb_publishable_G65OxEEE9Q_EidJkQqlWGg_Go07ePJg"; 
+        
+        // Inicializa o cliente do Supabase
+        const supabaseClient = supabase.createClient(NEW_SUPABASE_URL, NEW_SUPABASE_KEY);
 
-            // Sua URL oficial e a chave Publishable ativa
-            const url = "https://afqrkodlfvqskbruwpwv.supabase.co/rest/v1/jogadores";
-            const apiKey = "Sb_publishable_Q3o5bYenBb6W6acnlRdF8Q_ZDG9kMcB";
+        // FUNÇÃO 1: GRAVAR NO BANCO
+        async function testarEscrita() {
+            const painel = document.getElementById('resultado');
+            painel.className = 'info';
+            painel.innerText = "Gravando dado de teste...";
 
-            try {
-                const resposta = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'apikey': apiKey,
-                        // Para chaves sb_publishable com ECC, passamos o Bearer no formato simplificado exigido pelo PostgREST
-                        'Authorization': `Bearer ${apiKey}`,
-                        'Content-Type': 'application/json',
-                        'Prefer': 'return=representation'
-                    },
-                    body: JSON.stringify({
-                        nome: "Ajuste Fino ECC",
-                        status: "aguardando"
-                    })
-                });
+            const { data, error } = await supabaseClient
+                .from('teste_conexao')
+                .insert([{ mensagem: "Conexão estabelecida com sucesso!" }])
+                .select();
 
-                // Se a resposta retornar um texto vazio ou falha na conversão de JSON
-                const textoResposta = await resposta.text();
-                let dados = {};
-                try { dados = JSON.parse(textoResposta); } catch(e) { dados = { raw: textoResposta }; }
+            if (error) {
+                painel.className = 'erro';
+                painel.innerText = "❌ Erro ao Gravar:\n\n" + JSON.stringify(error, null, 2);
+            } else {
+                painel.className = 'sucesso';
+                painel.innerText = "✅ Gravado com Sucesso!\n\nID do registro criado: " + data[0].id + "\nHorário: " + data[0].criado_em;
+            }
+        }
 
-                if (!resposta.ok) {
-                    campoResultado.className = 'erro';
-                    campoResultado.innerText = "❌ O Banco Rejeitou!\n\nStatus: " + resposta.status + "\n\n" + JSON.stringify(dados, null, 2);
+        // FUNÇÃO 2: LER DO BANCO
+        async function testarLeitura() {
+            const painel = document.getElementById('resultado');
+            painel.className = 'info';
+            painel.innerText = "Buscando dados no banco...";
+
+            const { data, error } = await supabaseClient
+                .from('teste_conexao')
+                .select('*')
+                .order('id', { ascending: false });
+
+            if (error) {
+                painel.className = 'erro';
+                painel.innerText = "❌ Erro ao Ler:\n\n" + JSON.stringify(error, null, 2);
+            } else {
+                if(data.length === 0) {
+                    painel.className = 'erro';
+                    painel.innerText = "⚠️ O banco respondeu corretamente, mas está vazio. Clique em 'Testar Escrita' primeiro!";
                 } else {
-                    campoResultado.className = 'sucesso';
-                    campoResultado.innerText = "✅ SUCESSO ABSOLUTO!\n\nO banco aceitou os novos cabeçalhos de segurança e inseriu os dados.";
+                    painel.className = 'sucesso';
+                    painel.innerText = `✅ Leitura Ok! Encontrados ${data.length} registros.\n\nÚltimo dado no banco:\nID: ${data[0].id}\nMensagem: "${data[0].mensagem}"`;
                 }
-
-            } catch (erro) {
-                console.error(erro);
-                campoResultado.className = 'erro';
-                campoResultado.innerText = "🚨 Erro de Comunicação:\n" + erro.message;
             }
         }
     </script>
