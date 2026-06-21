@@ -233,6 +233,7 @@
         let bolasListadasAdmin = [];
         let loopAdminListas = null;
         let loopJogadorBolas = null;
+        let loopEsperaLiberacao = null; // Guardar o intervalo da tela de espera
         let audioCtx = null;
         let girandoTrava = false;
 
@@ -342,14 +343,14 @@
                 document.getElementById('txt-nome-espera').innerText = data[0].nome;
                 changeView('view-espera');
                 
-                let checkLoop = setInterval(async () => {
-                    // Se o chamador deletou a tabela no início da partida, a linha deste jogador some do banco
+                loopEsperaLiberacao = setInterval(async () => {
+                    if (!meId) return;
                     const r = await fetch(`${CONFIG.URL}/jogadores?id=eq.${meId}&select=liberado`, { headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
                     const d = await r.json();
                     
-                    // Se a resposta retornar vazia, significa que a mesa foi resetada pelo Admin
+                    // Tratamento caso o admin delete as tabelas antes da liberação
                     if(r.ok && d.length === 0) {
-                        clearInterval(checkLoop);
+                        clearInterval(loopEsperaLiberacao);
                         meId = null;
                         alert("A partida foi reiniciada pelo chamador.");
                         changeView('view-inicial');
@@ -357,7 +358,7 @@
                     }
 
                     if(r.ok && d.length > 0 && d[0].liberado) {
-                        clearInterval(checkLoop);
+                        clearInterval(loopEsperaLiberacao);
                         montarGradeCartelaVisual(data[0].nome);
                         loopJogadorBolas = setInterval(escutarBolasNoDispositivoJogador, 3000);
                     }
@@ -400,38 +401,48 @@
             });
         }
 
+        // REDIRECIONAMENTO IMEDIATO: Monitora se o chamador deletou a mesa
         async function escutarBolasNoDispositivoJogador() {
             if(!meId) return;
-            const r = await fetch(`${CONFIG.URL}/jogo_status?id=eq.1&select=bola_atual`, { headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
-            const d = await r.json();
-            
-            // Verifica simultaneamente se a partida foi limpa no meio do jogo
+
+            // Faz a leitura rápida do jogador atual
             const checkMe = await fetch(`${CONFIG.URL}/jogadores?id=eq.${meId}&select=id`, { headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
             const dataMe = await checkMe.json();
             
+            // Se o ID não existe mais, limpa o loop imediatamente e joga para a Home
             if(checkMe.ok && dataMe.length === 0) {
-                if(loopJogadorBolas) clearInterval(loopJogadorBolas);
+                clearInterval(loopJogadorBolas);
                 meId = null;
+                minhaCartelaNumeros = [];
                 alert("Esta partida foi encerrada pelo chamador.");
                 changeView('view-inicial');
                 return;
             }
 
+            // Se o jogador continua ativo, lê as pedras sorteadas normalmente
+            const r = await fetch(`${CONFIG.URL}/jogo_status?id=eq.1&select=bola_atual`, { headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` } });
+            const d = await r.json();
             if(r.ok && d.length > 0 && d[0].bola_atual) {
                 document.getElementById('lbl-bola-atual-jog').innerText = `Última pedra chamada: 🔴 ${d[0].bola_atual}`;
             }
         }
 
+        // CORREÇÃO DO BUG: Desativa o cronômetro ANTES do alerta e do fetch
         async function desistirDoJogoJogador() {
             if(!confirm("Deseja mesmo desistir desta partida e abandonar sua cartela?")) return;
+            
+            // Trava o loop imediatamente na máquina local para evitar alertas múltiplos concorrentes
             if(loopJogadorBolas) clearInterval(loopJogadorBolas);
+            if(loopEsperaLiberacao) clearInterval(loopEsperaLiberacao);
 
-            await fetch(`${CONFIG.URL}/jogadores?id=eq.${meId}`, {
+            const tempId = meId;
+            meId = null; // Anula a credencial local
+
+            await fetch(`${CONFIG.URL}/jogadores?id=eq.${tempId}`, {
                 method: 'DELETE',
                 headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` }
             });
 
-            meId = null;
             minhaCartelaNumeros = [];
             document.getElementById('inputNome').value = "";
             changeView('view-inicial');
@@ -449,16 +460,13 @@
             }
         }
 
-        // CHAMADOR: APAGA TODAS AS CARTELAS E USUÁRIOS COMPATÍVEIS PARA EVITAR CONFLITOS
         async function configurarEIniciarNovaPartida() {
-            // 1. Reseta o status global do globo e das pedras sorteadas
             await fetch(`${CONFIG.URL}/jogo_status?id=eq.1`, {
                 method: 'PATCH',
                 headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ bola_atual: null, bolas_sorteadas: [] })
             });
 
-            // 2. Limpa toda a tabela de jogadores cadastrados e suas respectivas cartelas vinculadas
             await fetch(`${CONFIG.URL}/jogadores`, {
                 method: 'DELETE',
                 headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` }
@@ -471,6 +479,7 @@
 
             changeView('view-chamador');
             renderizarListasNoAdmin();
+            if(loopAdminListas) clearInterval(loopAdminListas);
             loopAdminListas = setInterval(renderizarListasNoAdmin, 4000);
         }
 
@@ -482,7 +491,6 @@
         async function encerrarPartidaGeral() {
             if(!confirm("Tem certeza que deseja encerrar e resetar esta partida? Isso expulsará todos os jogadores.")) return;
             
-            // Deleta os jogadores ao encerrar também
             await fetch(`${CONFIG.URL}/jogadores`, {
                 method: 'DELETE',
                 headers: { 'apikey': CONFIG.KEY, 'Authorization': `Bearer ${CONFIG.KEY}` }
