@@ -2,177 +2,137 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bingo Realtime | Modern UI</title>
+    <title>Painel Admin - Bingo Casa 5</title>
     <style>
-        :root {
-            --primary: #2563eb;
-            --secondary: #64748b;
-            --success: #059669;
-            --danger: #dc2626;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text: #1e293b;
-            --border: #e2e8f0;
-        }
-
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .neon-panel {
-            width: 100%;
-            max-width: 500px;
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-            display: none;
-            margin-bottom: 20px;
-        }
-
-        .neon-panel.active { display: block; }
-
-        h1, h2, h3 { text-align: center; color: #0f172a; margin-top: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f4f9; padding: 10px; margin: 0; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; }
         
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 16px;
-            box-sizing: border-box;
-            margin-bottom: 15px;
-        }
-
-        button {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        button:hover { opacity: 0.9; }
+        /* Globo Visual */
+        .globo { width: 160px; height: 160px; background: #ff4500; border-radius: 50%; position: relative; margin: 0 auto 20px auto; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .bola-pequena { position: absolute; width: 10px; height: 10px; background: white; border-radius: 50%; opacity: 0.8; }
+        #displayNumero { font-size: 50px; color: white; font-weight: bold; z-index: 10; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
         
-        .btn-main { background: var(--primary); color: white; }
-        .btn-green { background: var(--success); color: white; }
-        .btn-red { background: var(--danger); color: white; }
+        @keyframes shake {
+            0% { transform: translate(1px, 1px); }
+            50% { transform: translate(-2px, -2px); }
+            100% { transform: translate(1px, 1px); }
+        }
+        @keyframes flutuar {
+            0% { transform: translate(0, 0); }
+            50% { transform: translate(10px, -10px); }
+            100% { transform: translate(0, 0); }
+        }
+        .agitando .bola-pequena { animation: shake 0.1s infinite, flutuar 0.8s infinite ease-in-out; }
 
-        .bingo-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 15px; }
-        .b-cell { background: var(--bg); border: 1px solid var(--border); text-align: center; padding: 12px 0; font-weight: 600; border-radius: 6px; cursor: pointer; }
-        .b-cell.marked { background: var(--success); color: white; border-color: var(--success); }
-
-        .painel-75 { display: grid; grid-template-columns: repeat(15, 1fr); gap: 4px; margin-top: 15px; background: var(--bg); padding: 8px; border-radius: 8px; }
-        .p-bola { background: var(--card); color: var(--secondary); text-align: center; padding: 6px 0; border-radius: 4px; font-size: 10px; font-weight: bold; border: 1px solid var(--border); }
-        .p-bola.active { background: var(--primary); color: white; }
-
-        .list-container { max-height: 200px; overflow-y: auto; margin-top: 10px; }
-        .player-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        .btn-sortear { background: #28a745; color: white; border: none; padding: 15px 30px; border-radius: 50px; font-weight: bold; cursor: pointer; width: 100%; font-size: 18px; margin-bottom: 20px; }
+        .btn-sortear:disabled { background: #ccc; cursor: not-allowed; }
         
-        .bola-display { width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--primary); display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: bold; color: var(--primary); margin: 15px auto; background: #eff6ff; }
+        .painel-jogadores { margin-top: 30px; margin-bottom: 30px; }
+        .jogador-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
+        .btn-liberar { background: #007bff; color: white; border: none; padding: 5px 15px; border-radius: 5px; cursor: pointer; }
+        
+        .header-numeros { display: flex; flex-direction: column; gap: 10px; border-top: 2px solid #eee; padding-top: 20px; margin-top: 20px; }
+        .stats { display: flex; justify-content: space-between; font-weight: bold; }
+        .grid-numeros { display: grid; grid-template-columns: repeat(auto-fill, minmax(35px, 1fr)); gap: 5px; margin-top: 15px; }
+        .num-bola { height: 35px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 14px; font-weight: bold; }
+        .num-bola.sorteado { background: #ff4500; color: white; }
     </style>
 </head>
 <body>
+    <audio id="audioSorteio" src="bingo_sound.mp3" loop></audio>
+    <div class="container">
+        <h1>Painel do Chamador</h1>
+        
+        <div class="globo" id="globoContainer">
+            <div id="bolinhasInternas"></div>
+            <div id="displayNumero">--</div>
+        </div>
+        
+        <button class="btn-sortear" onclick="sortear()">Sortear Número</button>
 
-    <div class="neon-panel active" id="view-inicial">
-        <h1>BINGO REALTIME</h1>
-        <input type="text" id="inputNome" placeholder="INSIRA SEU NOME...">
-        <button class="btn-main" onclick="solicitarVagaJogador()">Solicitar Cartela</button>
-
-        <div style="margin-top: 20px; text-align: center; border-top: 1px solid var(--border); padding-top: 20px;">
-            <span onclick="abrirPromptCadeado()" style="cursor:pointer; color: var(--secondary);">⚙️ Admin</span>
-            <div id="boxCadeado" style="display: none; margin-top: 10px;">
-                <input type="password" id="inputSenhaCadeado" placeholder="SENHA...">
-                <button class="btn-main" onclick="validarAcessoChamador()">Acessar</button>
+        <div class="painel-jogadores">
+            <h2>Pedidos de Cartela</h2>
+            <div id="listaJogadores">
+                <div class="jogador-item">
+                    <span>Jogador Exemplo</span>
+                    <button class="btn-liberar" onclick="liberarJogador(this)">Liberar</button>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="neon-panel" id="view-espera">
-        <h2>AGUARDANDO</h2>
-        <p id="txt-nome-espera" style="text-align: center;"></p>
-    </div>
-
-    <div class="neon-panel" id="view-cartela">
-        <h3 id="lbl-jogador-nome">Jogador</h3>
-        <div style="text-align: center; color: var(--primary); margin-bottom: 15px;" id="lbl-bola-atual-jog">--</div>
-        <div class="bingo-grid" id="grid-cartela-corpo"></div>
-        <button class="btn-red" onclick="desistirDoJogoJogador()" style="margin-top: 20px;">Desistir</button>
-    </div>
-
-    <div class="neon-panel" id="view-chamador-lobby">
-        <h2>GERENCIADOR</h2>
-        <button class="btn-green" onclick="configurarEIniciarNovaPartida()">Iniciar Nova Partida</button>
-    </div>
-
-    <div class="neon-panel" id="view-chamador">
-        <h2>CONSOLE</h2>
-        <div class="bola-display" id="bola-principal">--</div>
-        <button class="btn-main" id="btn-girar-globo" onclick="rodarGloboAdmin()">Girar Globo</button>
-        <div id="lista-pedidos" class="list-container"></div>
-        <div id="lista-atendidos" class="list-container"></div>
-        <div class="painel-75" id="grade-75-bolas"></div>
-        <button class="btn-red" onclick="encerrarPartidaGeral()" style="margin-top: 20px;">Encerrar Jogo</button>
+        <div class="header-numeros">
+            <div class="stats">
+                <span>Chamados: <span id="contadorSorteados">0</span></span>
+                <span>No Globo: <span id="contadorRestantes">75</span></span>
+            </div>
+        </div>
+        <div class="grid-numeros" id="gridNumeros"></div>
     </div>
 
     <script>
-        const CONFIG = {
-            URL: "https://jolstaqfbllfbtfljpjj.supabase.co/rest/v1",
-            KEY: "sb_publishable_G65OxEEE9Q_EidJkQqlWGg_Go07ePJg"
-        };
+        let bolasNoGlobo = Array.from({length: 75}, (_, i) => i + 1);
 
-        let meId = null;
-        let minhaCartelaNumeros = [];
-
-        function changeView(targetId) {
-            document.querySelectorAll('.neon-panel').forEach(p => p.classList.remove('active'));
-            document.getElementById(targetId).classList.add('active');
-        }
-
-        function abrirPromptCadeado() {
-            const box = document.getElementById('boxCadeado');
-            box.style.display = box.style.display === 'none' ? 'block' : 'none';
-        }
-
-        async function encerrarPartidaGeral() {
-            if (!confirm("Tem certeza que deseja encerrar a partida e remover todos os jogadores?")) return;
-
-            try {
-                const response = await fetch(`${CONFIG.URL}/jogadores`, {
-                    method: 'DELETE',
-                    headers: {
-                        'apikey': CONFIG.KEY,
-                        'Authorization': `Bearer ${CONFIG.KEY}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (response.ok) {
-                    alert("Partida encerrada com sucesso.");
-                    location.reload(); 
-                } else {
-                    const error = await response.json();
-                    console.error("Erro ao deletar (API):", error);
-                    alert("Erro ao encerrar. Verifique o console (F12) para detalhes.");
-                }
-            } catch (err) {
-                console.error("Erro na conexão:", err);
-                alert("Falha de conexão com o banco.");
+        function popularGlobo() {
+            const container = document.getElementById('bolinhasInternas');
+            for(let i=0; i<75; i++) {
+                let b = document.createElement('div');
+                b.className = 'bola-pequena';
+                b.style.left = (Math.random() * 140) + 'px';
+                b.style.top = (Math.random() * 140) + 'px';
+                b.style.animationDelay = (Math.random() * 2) + 's';
+                container.appendChild(b);
             }
         }
+        popularGlobo();
 
-        // ... (resto das suas funções originais de solicitação, sorteio, etc.)
+        const grid = document.getElementById('gridNumeros');
+        for(let i=1; i<=75; i++) grid.innerHTML += `<div class="num-bola" id="n-${i}">${i}</div>`;
+
+        function sortear() {
+            if(bolasNoGlobo.length === 0) return alert("Fim de jogo!");
+            
+            const btn = document.querySelector('.btn-sortear');
+            const container = document.getElementById('globoContainer');
+            const som = document.getElementById('audioSorteio');
+            
+            btn.disabled = true;
+            container.classList.add('agitando');
+            som.currentTime = 0;
+            som.play();
+
+            let contador = 0;
+            let intervalo = setInterval(() => {
+                document.getElementById('displayNumero').innerText = Math.floor(Math.random() * 75) + 1;
+                contador++;
+                if (contador >= 20) {
+                    clearInterval(intervalo);
+                    som.pause();
+                    container.classList.remove('agitando');
+                    finalizarSorteio();
+                }
+            }, 100);
+        }
+
+        function finalizarSorteio() {
+            let num = bolasNoGlobo.splice(Math.floor(Math.random() * bolasNoGlobo.length), 1)[0];
+            document.getElementById('displayNumero').innerText = num;
+            document.getElementById('n-' + num).classList.add('sorteado');
+            
+            const container = document.getElementById('bolinhasInternas');
+            if(container.lastChild) container.removeChild(container.lastChild);
+            
+            document.getElementById('contadorSorteados').innerText = (75 - bolasNoGlobo.length);
+            document.getElementById('contadorRestantes').innerText = bolasNoGlobo.length;
+            
+            document.querySelector('.btn-sortear').disabled = false;
+        }
+
+        function liberarJogador(btn) {
+            btn.innerText = "Liberado";
+            btn.disabled = true;
+            btn.style.backgroundColor = "#28a745";
+        }
     </script>
 </body>
 </html>
