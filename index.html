@@ -2,34 +2,49 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Bingo - Minha Cartela</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bingo Casa 5 - Cartela</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #f4f4f9; }
-        .grid-jogador { display: grid; grid-template-columns: repeat(15, 1fr); gap: 5px; max-width: 600px; margin: auto; }
-        .num { padding: 10px; border: 1px solid #ccc; background: white; border-radius: 4px; }
-        .marcado { background: #ff4500; color: white; font-weight: bold; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f4f9; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        h1 { color: #333; }
+        .grid-numeros { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 8px; width: 100%; max-width: 600px; margin-top: 20px; }
+        .num-bola { height: 40px; border: 1px solid #ddd; background: white; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 16px; font-weight: bold; transition: 0.3s; }
+        .num-bola.marcado { background: #ff4500; color: white; transform: scale(1.1); box-shadow: 0 0 10px rgba(255, 69, 0, 0.5); }
     </style>
 </head>
 <body>
-    <h1>Sua Cartela</h1>
-    <div class="grid-jogador" id="gridJogador"></div>
+
+    <h1>Sorteio em Tempo Real</h1>
+    <div class="grid-numeros" id="gridJogador"></div>
 
     <script>
-        const supabase = supabase.createClient('https://jolstaqfbllfbtfljpjj.supabase.co', 'SUA_CHAVE_ANON_AQUI');
+        // SUBSTITUA PELA SUA CHAVE ANON PÚBLICA DO SUPABASE
+        const SUPABASE_URL = 'https://jolstaqfbllfbtfljpjj.supabase.co';
+        const SUPABASE_KEY = 'SUA_CHAVE_ANON_AQUI'; 
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Renderiza grid 1-75
+        // 1. Criar o Grid de 1 a 75
         const grid = document.getElementById('gridJogador');
-        for(let i=1; i<=75; i++) grid.innerHTML += `<div class="num" id="j-${i}">${i}</div>`;
+        for(let i = 1; i <= 75; i++) {
+            grid.innerHTML += `<div class="num-bola" id="j-${i}">${i}</div>`;
+        }
 
-        // Escuta o sorteio em tempo real
+        // 2. Escutar mudanças na tabela 'sorteios'
         supabase
-          .channel('sorteios')
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'sorteios' }, payload => {
-            const numero = payload.new.numero_sorteado;
-            document.getElementById('j-' + numero).classList.add('marcado');
-          })
-          .subscribe();
+            .channel('sorteios')
+            .on('postgres_changes', { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'sorteios' 
+            }, payload => {
+                const numeroSorteado = payload.new.numero_sorteado;
+                const elemento = document.getElementById('j-' + numeroSorteado);
+                if (elemento) {
+                    elemento.classList.add('marcado');
+                }
+            })
+            .subscribe();
     </script>
 </body>
 </html>
