@@ -3,48 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bingo Casa 5 - Cartela</title>
+    <title>Bingo Casa 5</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f4f9; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        h1 { color: #333; }
-        .grid-numeros { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 8px; width: 100%; max-width: 600px; margin-top: 20px; }
-        .num-bola { height: 40px; border: 1px solid #ddd; background: white; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 16px; font-weight: bold; transition: 0.3s; }
-        .num-bola.marcado { background: #ff4500; color: white; transform: scale(1.1); box-shadow: 0 0 10px rgba(255, 69, 0, 0.5); }
+        /* ... (seu CSS permanece o mesmo) ... */
     </style>
 </head>
 <body>
-
-    <h1>Sorteio em Tempo Real</h1>
-    <div class="grid-numeros" id="gridJogador"></div>
-
     <script>
-        // SUBSTITUA PELA SUA CHAVE ANON PÚBLICA DO SUPABASE
+        // CONFIGURAÇÃO SUPABASE
         const SUPABASE_URL = 'https://jolstaqfbllfbtfljpjj.supabase.co';
-        const SUPABASE_KEY = 'SUA_CHAVE_ANON_AQUI'; 
+        const SUPABASE_KEY = 'SUA_CHAVE_ANON_AQUI'; // <--- COLOQUE SUA CHAVE AQUI
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // 1. Criar o Grid de 1 a 75
-        const grid = document.getElementById('gridJogador');
-        for(let i = 1; i <= 75; i++) {
-            grid.innerHTML += `<div class="num-bola" id="j-${i}">${i}</div>`;
+        let cartelaGerada = [];
+
+        async function gerarCartela() {
+            const nome = document.getElementById('nomeJogador').value;
+            if (!nome) return alert("Digite seu nome!");
+
+            // Gera a estrutura da cartela antes de salvar
+            cartelaGerada = gerarNumeros();
+
+            // SALVA NO BANCO
+            const { data, error } = await supabase
+                .from('jogadores')
+                .insert([{ nome: nome, cartela: cartelaGerada, liberado: false }]);
+
+            if (error) return alert("Erro ao salvar: " + error.message);
+
+            document.getElementById('area-jogo').style.display = 'none';
+            document.getElementById('displayNome').innerText = nome;
+            document.getElementById('area-espera').style.display = 'block';
         }
 
-        // 2. Escutar mudanças na tabela 'sorteios'
-        supabase
-            .channel('sorteios')
-            .on('postgres_changes', { 
-                event: 'INSERT', 
-                schema: 'public', 
-                table: 'sorteios' 
-            }, payload => {
-                const numeroSorteado = payload.new.numero_sorteado;
-                const elemento = document.getElementById('j-' + numeroSorteado);
-                if (elemento) {
-                    elemento.classList.add('marcado');
+        function gerarNumeros() {
+            let colunas = [[], [], [], [], []];
+            for (let c = 0; c < 5; c++) {
+                let nums = [];
+                while(nums.length < 5) {
+                    let n = Math.floor(Math.random() * 15) + (c * 15) + 1;
+                    if(!nums.includes(n)) nums.push(n);
                 }
-            })
-            .subscribe();
+                colunas[c] = nums;
+            }
+            return colunas;
+        }
+
+        // Função chamada quando o admin liberar no painel
+        function simularLiberacao() {
+            document.getElementById('area-espera').style.display = 'none';
+            document.getElementById('area-cartela').style.display = 'block';
+            renderizarCartela(cartelaGerada);
+        }
+
+        function renderizarCartela(colunas) {
+            const grid = document.getElementById('gridCartela');
+            for (let r = 0; r < 5; r++) {
+                for (let c = 0; c < 5; c++) {
+                    let ehCentro = (r === 2 && c === 2);
+                    let val = ehCentro ? "★" : colunas[c][r];
+                    const div = document.createElement('div');
+                    div.className = ehCentro ? "celula centro marcado" : "celula";
+                    div.innerText = val;
+                    if (!ehCentro) div.onclick = function() { this.classList.toggle('marcado'); };
+                    grid.appendChild(div);
+                }
+            }
+        }
+        
+        // ... (resto do seu script de senha) ...
     </script>
 </body>
 </html>
