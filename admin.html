@@ -69,22 +69,24 @@
     <script>
         let bolasNoGlobo = Array.from({length: 75}, (_, i) => i + 1);
 
-        // Carregar jogadores em tempo real
+        // Carregar jogadores pendentes em tempo real
         async function carregarJogadores() {
             const { data } = await supabaseClient.from('jogadores').select('*').eq('liberado', false);
             const lista = document.getElementById('listaJogadores');
             lista.innerHTML = '';
-            data.forEach(j => {
-                lista.innerHTML += `
-                    <div class="jogador-item">
-                        <span>${j.nome}</span>
-                        <button class="btn-liberar" onclick="liberarJogador(${j.id}, this)">Liberar</button>
-                    </div>`;
-            });
+            if (data) {
+                data.forEach(j => {
+                    lista.innerHTML += `
+                        <div class="jogador-item">
+                            <span>${j.nome}</span>
+                            <button class="btn-liberar" onclick="liberarJogador(${j.id}, this)">Liberar</button>
+                        </div>`;
+                });
+            }
         }
 
-        // Monitorar novos pedidos de cartela
-        supabaseClient.channel('public:jogadores')
+        // Monitorar novos jogadores em tempo real
+        supabaseClient.channel('canal_admin')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'jogadores' }, () => carregarJogadores())
             .subscribe();
 
@@ -128,8 +130,12 @@
         }
 
         async function finalizarSorteio() {
-            let num = bolasNoGlobo.splice(Math.floor(Math.random() * bolasNoGlobo.length), 1)[0];
+            let index = Math.floor(Math.random() * bolasNoGlobo.length);
+            let num = bolasNoGlobo.splice(index, 1)[0];
+            
+            // Salva o número sorteado no Supabase
             await supabaseClient.from('sorteios').insert([{ numero: num }]);
+            
             document.getElementById('displayNumero').innerText = num;
             document.getElementById('n-' + num).classList.add('sorteado');
             document.getElementById('contadorSorteados').innerText = (75 - bolasNoGlobo.length);
