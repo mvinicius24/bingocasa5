@@ -4,17 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bingo Casa 5</title>
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Alterado para 'supabaseClient' para evitar conflito com a biblioteca
         const supabaseClient = supabase.createClient(
             'https://qzdrztqtlrxqthwmbahv.supabase.co', 
             'sb_publishable_71189U5mn7DO98FZcO3nxg_wTzIm2JU',
             { auth: { persistSession: false } }
         );
     </script>
-
     <style>
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: #f4f4f9; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
         .admin-link { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; opacity: 0.6; transition: 0.3s; }
@@ -37,27 +34,22 @@
     </style>
 </head>
 <body>
-
     <div id="cadeado" class="admin-link" onclick="document.getElementById('modal').style.display='flex'">🔒</div>
-
     <div class="container" id="area-jogo">
         <div class="logo-img"><img src="logo2.jpeg" alt="Logo"></div>
         <input type="text" id="nomeJogador" placeholder="Digite seu nome">
         <button class="btn-main" onclick="gerarCartela()">Gerar Minha Cartela</button>
     </div>
-
     <div class="container" id="area-espera">
         <h3>Olá, <span id="displayNome"></span>!</h3>
         <p>Aguardando liberação do chamador...</p>
     </div>
-
     <div class="container" id="area-cartela">
         <h3>Sua Cartela</h3>
         <div class="cartela-bingo" id="gridCartela">
             <div class="header-col">B</div><div class="header-col">I</div><div class="header-col">N</div><div class="header-col">G</div><div class="header-col">O</div>
         </div>
     </div>
-
     <div id="modal" class="modal">
         <div class="modal-content">
             <h3>Admin</h3>
@@ -65,33 +57,22 @@
             <button class="btn-main" onclick="validarSenha()">Entrar</button>
         </div>
     </div>
-
     <script>
         function toggleCadeado(mostrar) {
             const cadeado = document.getElementById('cadeado');
             mostrar ? cadeado.classList.remove('ocultar') : cadeado.classList.add('ocultar');
         }
-
         async function gerarCartela() {
             const nome = document.getElementById('nomeJogador').value;
             if (!nome) return alert("Digite seu nome!");
-            
-            // Usando supabaseClient corrigido
             const { data, error } = await supabaseClient.from('jogadores').insert([{ nome: nome }]).select();
-            
-            if (error) {
-                console.error("Erro ao salvar:", error);
-                return alert("Erro ao entrar: " + error.message);
-            }
-            
+            if (error) return alert("Erro: " + error.message);
             const jogadorId = data[0].id;
             toggleCadeado(false);
             document.getElementById('area-jogo').style.display = 'none';
             document.getElementById('displayNome').innerText = nome;
             document.getElementById('area-espera').style.display = 'block';
-
-            // Escuta em tempo real usando supabaseClient
-            supabaseClient.channel('public:jogadores')
+            supabaseClient.channel('canal_' + jogadorId)
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'jogadores', filter: `id=eq.${jogadorId}` }, payload => {
                     if(payload.new.liberado) {
                         document.getElementById('area-espera').style.display = 'none';
@@ -100,32 +81,19 @@
                     }
                 }).subscribe();
         }
-
         function montarCartela() {
             const grid = document.getElementById('gridCartela');
-            let colunas = [[], [], [], [], []];
-            for (let c = 0; c < 5; c++) {
-                let min = (c * 15) + 1;
-                let max = (c + 1) * 15;
-                let nums = [];
-                while(nums.length < 5) {
-                    let n = Math.floor(Math.random() * (max - min + 1)) + min;
-                    if(!nums.includes(n)) nums.push(n);
-                }
-                colunas[c] = nums.sort((a, b) => a - b);
-            }
             for (let r = 0; r < 5; r++) {
                 for (let c = 0; c < 5; c++) {
                     let ehCentro = (r === 2 && c === 2);
                     const div = document.createElement('div');
                     div.className = ehCentro ? "celula centro marcado" : "celula";
-                    div.innerText = ehCentro ? "★" : colunas[c][r];
+                    div.innerText = ehCentro ? "★" : Math.floor(Math.random()*15 + 1 + (c*15));
                     if (!ehCentro) div.onclick = function() { this.classList.toggle('marcado'); };
                     grid.appendChild(div);
                 }
             }
         }
-
         function validarSenha() {
             if (document.getElementById('senhaInput').value === "1234") window.location.href = "admin.html";
             else alert("Senha incorreta!");
