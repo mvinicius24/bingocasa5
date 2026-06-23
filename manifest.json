@@ -1,7 +1,7 @@
 {
   "name": "Bingo Casa 5",
   "short_name": "Bingo",
-  "start_url": "index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f4f4f9",
   "theme_color": "#ff4500",
