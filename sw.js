@@ -1,3 +1,8 @@
-self.addEventListener('fetch', (event) => {
-  // Isso apenas permite que o site seja reconhecido como PWA
+// Service Worker para o Bingo Casa 5
+self.addEventListener('install', (event) => {
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil(clients.claim());
 });
