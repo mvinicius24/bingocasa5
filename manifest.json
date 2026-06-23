@@ -1,6 +1,6 @@
 {
   "name": "Bingo Casa 5",
-  "short_name": "Bingo",
+  "short_name": "Bingo Casa5",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f4f4f9",
