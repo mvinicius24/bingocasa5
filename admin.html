@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#ff4500">
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff4500">
     <title>Painel Admin - Bingo Casa 5</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
@@ -14,8 +15,17 @@
     </script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #f4f4f9; padding: 10px; margin: 0; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #333; }
+        .container { 
+            max-width: 800px; 
+            width: 95%; 
+            margin: 10px auto; 
+            background: white; 
+            padding: 15px; 
+            border-radius: 20px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+            box-sizing: border-box;
+        }
+        h1 { text-align: center; color: #333; font-size: 28px; }
         
         .globo { width: 160px; height: 160px; background: #ff4500; border-radius: 50%; position: relative; margin: 0 auto 20px auto; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         .bola-pequena { position: absolute; width: 10px; height: 10px; background: white; border-radius: 50%; opacity: 0.8; }
@@ -38,6 +48,14 @@
         .grid-numeros { display: grid; grid-template-columns: repeat(auto-fill, minmax(35px, 1fr)); gap: 5px; margin-top: 15px; }
         .num-bola { height: 35px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 14px; font-weight: bold; }
         .num-bola.sorteado { background: #ff4500; color: white; }
+
+        /* Media Queries para refinamento */
+        @media (max-width: 400px) {
+            h1 { font-size: 22px; }
+            .globo { width: 120px; height: 120px; }
+            #displayNumero { font-size: 40px; }
+            .btn-sortear { font-size: 16px; padding: 12px; }
+        }
     </style>
 </head>
 <body>
@@ -95,10 +113,8 @@
 
         async function finalizarJogo() {
             if(!confirm("Tem certeza que deseja encerrar o jogo? Isso apagará todos os dados!")) return;
-            
             await supabaseClient.from('jogadores').delete().neq('id', 0);
             await supabaseClient.from('sorteios').delete().neq('id', 0);
-            
             window.location.href = "index.html";
         }
 
@@ -127,11 +143,9 @@
             const btn = document.querySelector('.btn-sortear');
             const container = document.getElementById('globoContainer');
             const som = document.getElementById('audioSorteio');
-            
             btn.disabled = true;
             container.classList.add('agitando');
             som.play();
-
             let contador = 0;
             let intervalo = setInterval(() => {
                 document.getElementById('displayNumero').innerText = Math.floor(Math.random() * 75) + 1;
@@ -148,14 +162,11 @@
         async function finalizarSorteio() {
             let index = Math.floor(Math.random() * bolasNoGlobo.length);
             let num = bolasNoGlobo.splice(index, 1)[0];
-            
             await supabaseClient.from('sorteios').insert([{ numero: num }]);
-            
             document.getElementById('displayNumero').innerText = num;
             document.getElementById('n-' + num).classList.add('sorteado');
             if(document.getElementById('bolinhasInternas').lastChild) 
                 document.getElementById('bolinhasInternas').removeChild(document.getElementById('bolinhasInternas').lastChild);
-            
             document.getElementById('contadorSorteados').innerText = (75 - bolasNoGlobo.length);
             document.getElementById('contadorRestantes').innerText = bolasNoGlobo.length;
             document.querySelector('.btn-sortear').disabled = false;
